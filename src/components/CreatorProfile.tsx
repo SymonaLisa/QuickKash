@@ -13,8 +13,12 @@ import {
   Eye,
   EyeOff,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  Crown,
+  Sparkles,
+  QrCode
 } from 'lucide-react';
+import QRCode from 'react-qr-code';
 import { TipButton } from './TipButton';
 import { TipHistory } from './TipHistory';
 import { PremiumContentViewer } from './PremiumContentViewer';
@@ -47,6 +51,7 @@ export const CreatorProfile: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [showPremiumContent, setShowPremiumContent] = useState(false);
+  const [showQRCode, setShowQRCode] = useState(false);
   const [copied, setCopied] = useState(false);
   const [tipStats, setTipStats] = useState({ total: 0, count: 0, premiumCount: 0 });
   const [lastTip, setLastTip] = useState<{ txId: string; amount: number } | null>(null);
@@ -123,9 +128,13 @@ export const CreatorProfile: React.FC = () => {
     brandingManager.applyBrandingToDOM(branding);
   };
 
+  const getProfileUrl = () => {
+    return window.location.href;
+  };
+
   const handleCopyUrl = async () => {
     try {
-      const url = window.location.href;
+      const url = getProfileUrl();
       await navigator.clipboard.writeText(url);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -135,7 +144,7 @@ export const CreatorProfile: React.FC = () => {
   };
 
   const handleShare = async () => {
-    const url = window.location.href;
+    const url = getProfileUrl();
     const title = `${creator?.name || 'Creator'}'s QuickKash Tip Jar`;
     const text = `Support ${creator?.name || 'this creator'} with ALGO tips!`;
 
@@ -210,6 +219,7 @@ export const CreatorProfile: React.FC = () => {
   const brandColors = getBrandColors();
   const displayName = (creator.branding_enabled && creator.brand_name) || creator.name;
   const logoUrl = (creator.branding_enabled && creator.custom_logo_url) || creator.profile_image_url;
+  const profileUrl = getProfileUrl();
 
   return (
     <div 
@@ -226,11 +236,26 @@ export const CreatorProfile: React.FC = () => {
       <div className="max-w-2xl mx-auto relative z-10">
         <div className="grid gap-6">
           {/* Header */}
-          <div className="glass-card p-6 sm:p-8">
+          <div 
+            className={`glass-card p-6 sm:p-8 ${
+              creator.is_pro ? 'border-4 border-yellow-400/30 shadow-2xl animate-pulse' : ''
+            }`}
+          >
             <div className="text-center mb-6">
               <div className="flex justify-center mb-4">
                 <QuickKashLogo size="medium" />
               </div>
+              
+              {/* Pro Creator Badge */}
+              {creator.is_pro && (
+                <div className="mb-4">
+                  <div className="inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-yellow-400/20 to-yellow-500/20 border border-yellow-400/40 rounded-full text-yellow-300 font-semibold text-sm animate-pulse">
+                    <Crown className="w-4 h-4" />
+                    <span>✨ This creator is a QuickKash Pro member</span>
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                </div>
+              )}
               
               {/* Creator Avatar/Logo */}
               <div className="relative mb-6">
@@ -238,11 +263,15 @@ export const CreatorProfile: React.FC = () => {
                   <img
                     src={logoUrl}
                     alt={displayName}
-                    className="w-24 h-24 rounded-2xl object-cover mx-auto shadow-lg"
+                    className={`w-24 h-24 rounded-2xl object-cover mx-auto shadow-lg ${
+                      creator.is_pro ? 'ring-4 ring-yellow-400/50' : ''
+                    }`}
                   />
                 ) : (
                   <div 
-                    className="w-24 h-24 rounded-2xl flex items-center justify-center mx-auto shadow-lg"
+                    className={`w-24 h-24 rounded-2xl flex items-center justify-center mx-auto shadow-lg ${
+                      creator.is_pro ? 'ring-4 ring-yellow-400/50' : ''
+                    }`}
                     style={{ 
                       background: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.secondary})`
                     }}
@@ -252,8 +281,8 @@ export const CreatorProfile: React.FC = () => {
                 )}
                 
                 {creator.is_pro && (
-                  <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
-                    <Star className="w-4 h-4 text-white" />
+                  <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center animate-bounce">
+                    <Star className="w-4 h-4 text-yellow-900" />
                   </div>
                 )}
               </div>
@@ -315,26 +344,46 @@ export const CreatorProfile: React.FC = () => {
                 </div>
               </div>
 
-              {/* Share Buttons */}
-              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 mb-6">
-                <button
-                  onClick={handleShare}
-                  className="flex-1 flex items-center justify-center space-x-2 py-2 bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 rounded-xl transition-colors"
-                >
-                  <Share2 className="w-4 h-4" />
-                  <span>Share Profile</span>
-                </button>
-                
-                <button
-                  onClick={handleCopyUrl}
-                  className={`flex items-center justify-center px-4 py-2 rounded-xl transition-colors ${
-                    copied 
-                      ? 'bg-emerald-500 text-white' 
-                      : 'bg-slate-700/50 hover:bg-slate-600/50 text-slate-300'
-                  }`}
-                >
-                  {copied ? <Star className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                </button>
+              {/* Share Section */}
+              <div className="mb-6">
+                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 mb-4">
+                  <button
+                    onClick={handleShare}
+                    className="flex-1 flex items-center justify-center space-x-2 py-2 bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 rounded-xl transition-colors"
+                  >
+                    <Share2 className="w-4 h-4" />
+                    <span>Share Profile</span>
+                  </button>
+                  
+                  <button
+                    onClick={handleCopyUrl}
+                    className={`flex items-center justify-center px-4 py-2 rounded-xl transition-colors ${
+                      copied 
+                        ? 'bg-emerald-500 text-white' 
+                        : 'bg-slate-700/50 hover:bg-slate-600/50 text-slate-300'
+                    }`}
+                  >
+                    {copied ? <Star className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  </button>
+
+                  <button
+                    onClick={() => setShowQRCode(!showQRCode)}
+                    className="flex items-center justify-center px-4 py-2 bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 rounded-xl transition-colors"
+                  >
+                    <QrCode className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* QR Code */}
+                {showQRCode && (
+                  <div className="bg-white p-4 rounded-xl inline-block">
+                    <QRCode value={profileUrl} size={128} />
+                    <p className="text-center text-xs text-gray-600 mt-2">
+                      📤 Share your link: <br />
+                      <code className="text-xs break-all">{profileUrl}</code>
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Premium Content Info */}
@@ -354,6 +403,7 @@ export const CreatorProfile: React.FC = () => {
                 <div className="text-sm space-y-1" style={{ color: brandColors.secondary }}>
                   <p>⭐ Tip 10+ ALGO → Get instant access to exclusive content</p>
                   <p>📁 Download premium rewards and bonus materials!</p>
+                  <p>💡 2% platform fee supports QuickKash development</p>
                 </div>
               </div>
             </div>
@@ -395,7 +445,7 @@ export const CreatorProfile: React.FC = () => {
             <div className="mt-6 pt-6 border-t border-slate-700">
               <div className="flex flex-col sm:flex-row items-center justify-between space-y-2 sm:space-y-0">
                 <p className="text-xs text-muted">
-                  Tips are sent directly to the creator's wallet on Algorand
+                  Tips are sent directly to the creator's wallet on Algorand (98% to creator, 2% platform fee)
                 </p>
                 <div className="flex space-x-4">
                   <button

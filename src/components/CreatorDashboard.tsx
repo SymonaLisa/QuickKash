@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   User, 
   Settings, 
@@ -17,9 +18,11 @@ import {
   Image,
   Type,
   Globe,
-  BarChart3
+  BarChart3,
+  LogOut,
+  Shield
 } from 'lucide-react';
-import { connectPera } from '../utils/walletConnection';
+import { connectPera, disconnectPera } from '../utils/walletConnection';
 import { supabaseManager } from '../utils/supabase';
 import { checkProStatus } from '../utils/checkProStatus';
 import { TipHistory } from './TipHistory';
@@ -44,6 +47,7 @@ interface CreatorProfile {
 }
 
 export const CreatorDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [profile, setProfile] = useState<CreatorProfile | null>(null);
   const [loading, setLoading] = useState(false);
@@ -54,6 +58,7 @@ export const CreatorDashboard: React.FC = () => {
   const [isProfileLive, setIsProfileLive] = useState(false);
   const [tipStats, setTipStats] = useState({ total: 0, count: 0, premiumCount: 0 });
   const [copied, setCopied] = useState(false);
+  const [connectionAttempted, setConnectionAttempted] = useState(false);
 
   useEffect(() => {
     initializeDashboard();
@@ -62,18 +67,23 @@ export const CreatorDashboard: React.FC = () => {
   const initializeDashboard = async () => {
     setLoading(true);
     setError(null);
+    setConnectionAttempted(true);
 
     try {
-      // Connect wallet
+      // Connect wallet with route protection
       const address = await connectPera();
       if (!address) {
-        throw new Error('Please connect your Pera Wallet to access the dashboard');
+        // 🚫 Redirect to homepage if no wallet connected
+        navigate('/');
+        return;
       }
 
       setWalletAddress(address);
       await loadProfile(address);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to initialize dashboard');
+      console.error('Dashboard initialization failed:', err);
+      // 🚫 Redirect to homepage on connection failure
+      navigate('/');
     } finally {
       setLoading(false);
     }
@@ -139,6 +149,17 @@ export const CreatorDashboard: React.FC = () => {
     if (success) setSuccess(null);
   };
 
+  const handleDisconnectWallet = async () => {
+    try {
+      await disconnectPera();
+      setWalletAddress(null);
+      setProfile(null);
+      navigate('/');
+    } catch (error) {
+      console.error('Failed to disconnect wallet:', error);
+    }
+  };
+
   const getProfileUrl = () => {
     if (!walletAddress) return '';
     return `${window.location.origin}/creator/${walletAddress}`;
@@ -171,7 +192,8 @@ export const CreatorDashboard: React.FC = () => {
     }
   };
 
-  if (loading) {
+  // Show loading screen during initial connection attempt
+  if (loading && !connectionAttempted) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
         <div className="text-center">
@@ -182,19 +204,30 @@ export const CreatorDashboard: React.FC = () => {
     );
   }
 
-  if (error && !walletAddress) {
+  // Show connection required screen if wallet connection failed
+  if (!walletAddress && connectionAttempted) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
         <div className="max-w-md w-full glass-card p-8 text-center">
-          <AlertTriangle className="w-16 h-16 text-red-400 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-primary mb-2">Connection Required</h1>
-          <p className="text-secondary mb-4">{error}</p>
-          <button
-            onClick={initializeDashboard}
-            className="btn-primary px-6 py-2"
-          >
-            Try Again
-          </button>
+          <Shield className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-primary mb-2">Wallet Required</h1>
+          <p className="text-secondary mb-6">
+            Please connect your Pera Wallet to access the creator dashboard.
+          </p>
+          <div className="space-y-3">
+            <button
+              onClick={initializeDashboard}
+              className="w-full btn-primary py-3"
+            >
+              Connect Pera Wallet
+            </button>
+            <button
+              onClick={() => navigate('/')}
+              className="w-full btn-secondary py-3"
+            >
+              Go Home
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -244,6 +277,16 @@ export const CreatorDashboard: React.FC = () => {
                   <span>Pro</span>
                 </div>
               )}
+
+              {/* Disconnect Button */}
+              <button
+                onClick={handleDisconnectWallet}
+                className="flex items-center space-x-2 px-3 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-300 rounded-lg transition-colors text-sm"
+                title="Disconnect Wallet"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Disconnect</span>
+              </button>
             </div>
           </div>
         </div>
