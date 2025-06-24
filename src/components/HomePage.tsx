@@ -1,38 +1,23 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Wallet, Shield, Zap, Sparkles, AlertTriangle, Users, Crown, TrendingUp, Globe, ArrowRight, ExternalLink } from 'lucide-react';
-import { walletManager, WalletConnection } from '../utils/walletConnection';
+import { 
+  Zap, 
+  Crown, 
+  TrendingUp, 
+  Globe, 
+  Shield, 
+  Users, 
+  ArrowRight, 
+  ExternalLink,
+  Sparkles,
+  Eye,
+  Share2,
+  Palette
+} from 'lucide-react';
 import { QuickKashLogo } from './QuickKashLogo';
 
-interface WalletConnectorProps {
-  onWalletConnected: (connection: WalletConnection) => void;
-}
-
-export const WalletConnector: React.FC<WalletConnectorProps> = ({ onWalletConnected }) => {
+export const HomePage: React.FC = () => {
   const navigate = useNavigate();
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleWalletConnect = async (walletType: 'pera' | 'myalgo') => {
-    setIsConnecting(true);
-    setError(null);
-
-    try {
-      let connection: WalletConnection;
-      
-      if (walletType === 'pera') {
-        connection = await walletManager.connectPera();
-      } else {
-        connection = await walletManager.connectMyAlgo();
-      }
-      
-      onWalletConnected(connection);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Connection failed');
-    } finally {
-      setIsConnecting(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -85,10 +70,52 @@ export const WalletConnector: React.FC<WalletConnectorProps> = ({ onWalletConnec
                   </div>
                 </div>
               </div>
+
+              {/* CTA Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+                <button
+                  onClick={() => navigate('/')}
+                  className="flex items-center justify-center space-x-2 px-8 py-4 btn-primary text-lg font-semibold group"
+                >
+                  <span>Create Your Tip Jar</span>
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </button>
+                
+                <button
+                  onClick={() => navigate('/demo')}
+                  className="flex items-center justify-center space-x-2 px-8 py-4 btn-secondary text-lg font-semibold"
+                >
+                  <span>View Demo</span>
+                  <ExternalLink className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Quick Links */}
+              <div className="flex flex-wrap justify-center gap-4 text-sm">
+                <button
+                  onClick={() => navigate('/dashboard')}
+                  className="flex items-center space-x-1 text-emerald-400 hover:text-emerald-300 transition-colors"
+                >
+                  <span>Creator Dashboard</span>
+                  <ExternalLink className="w-3 h-3" />
+                </button>
+                
+                <span className="text-slate-600">•</span>
+                
+                <a
+                  href="https://github.com/your-username/quickkash-tip-jar"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center space-x-1 text-emerald-400 hover:text-emerald-300 transition-colors"
+                >
+                  <span>Open Source</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
             </div>
 
             {/* Feature Cards */}
-            <div className="grid md:grid-cols-3 gap-6 mb-12">
+            <div className="grid md:grid-cols-3 gap-6">
               <div className="glass-card p-6 text-center">
                 <div className="w-16 h-16 accent-gradient rounded-xl flex items-center justify-center mx-auto mb-4">
                   <Zap className="w-8 h-8 text-white" />
@@ -117,79 +144,6 @@ export const WalletConnector: React.FC<WalletConnectorProps> = ({ onWalletConnec
                 <p className="text-secondary text-sm">
                   Track your tips, analyze supporter behavior, and grow your audience with detailed insights
                 </p>
-              </div>
-            </div>
-
-            {/* Main CTA */}
-            <div className="glass-card p-8 text-center">
-              <h2 className="text-2xl font-bold text-primary mb-4">
-                Ready to Start Receiving Tips?
-              </h2>
-              <p className="text-secondary mb-6">
-                Connect your Algorand wallet to create your personalized tip jar in minutes
-              </p>
-
-              {error && (
-                <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-300 text-sm backdrop-blur-sm">
-                  <div className="flex items-start space-x-2">
-                    <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="font-medium mb-1">Connection Failed</p>
-                      <p>{error}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-4">
-                <button
-                  onClick={() => handleWalletConnect('pera')}
-                  disabled={isConnecting}
-                  className="w-full flex items-center justify-center space-x-3 p-4 btn-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none group"
-                >
-                  <Shield className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-                  <span className="font-semibold">
-                    {isConnecting ? 'Connecting...' : 'Connect with Pera Wallet'}
-                  </span>
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </button>
-
-                <button
-                  onClick={() => handleWalletConnect('myalgo')}
-                  disabled={isConnecting}
-                  className="w-full flex items-center justify-center space-x-3 p-4 btn-secondary disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none group"
-                >
-                  <Zap className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                  <span className="font-semibold">
-                    {isConnecting ? 'Connecting...' : 'Connect with MyAlgo'}
-                  </span>
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </button>
-              </div>
-
-              <div className="mt-6 pt-6 border-t border-slate-700">
-                <p className="text-xs text-muted text-center leading-relaxed mb-4">
-                  Your wallet will be used to receive tips. We don't store your private keys.
-                </p>
-                
-                {/* Quick Links */}
-                <div className="flex flex-wrap justify-center gap-4 text-sm">
-                  <button
-                    onClick={() => navigate('/demo')}
-                    className="flex items-center space-x-1 text-emerald-400 hover:text-emerald-300 transition-colors"
-                  >
-                    <span>View Demo</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </button>
-                  
-                  <button
-                    onClick={() => navigate('/dashboard')}
-                    className="flex items-center space-x-1 text-emerald-400 hover:text-emerald-300 transition-colors"
-                  >
-                    <span>Creator Dashboard</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </button>
-                </div>
               </div>
             </div>
           </div>
