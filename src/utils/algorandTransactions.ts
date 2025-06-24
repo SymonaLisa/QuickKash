@@ -12,9 +12,11 @@ class AlgorandTransactionManager {
   private peraWallet: PeraWalletConnect;
 
   constructor() {
-    // Using Nodely's API with the provided token
+    // Using Nodely's API with the token from environment variables
+    const algodToken = import.meta.env.VITE_ALGOD_TOKEN || '98D9CE80660AD243893D56D9F125CD2D';
+    
     this.algodClient = new algosdk.Algodv2(
-      '98D9CE80660AD243893D56D9F125CD2D',
+      algodToken,
       'https://mainnet-api.4160.nodely.io',
       ''
     );

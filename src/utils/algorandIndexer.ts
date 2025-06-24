@@ -20,8 +20,8 @@ class AlgorandIndexerManager {
   private indexerClient: algosdk.Indexer;
 
   constructor() {
-    // Using Nodely's indexer API with the official Algorand SDK
-    const algodToken = '98D9CE80660AD243893D56D9F125CD2D';
+    // Using Nodely's indexer API with the token from environment variables
+    const algodToken = import.meta.env.VITE_ALGOD_TOKEN || '98D9CE80660AD243893D56D9F125CD2D';
     const indexerServer = 'https://mainnet-idx.4160.nodely.io';
     const algodPort = '';
     

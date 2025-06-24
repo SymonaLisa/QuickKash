@@ -17,9 +17,11 @@ class GroupTransactionBuilder {
   private algodClient: algosdk.Algodv2;
 
   constructor() {
-    // Using Nodely's mainnet API
+    // Using Nodely's mainnet API with token from environment variables
+    const algodToken = import.meta.env.VITE_ALGOD_TOKEN || '98D9CE80660AD243893D56D9F125CD2D';
+    
     this.algodClient = new algosdk.Algodv2(
-      '98D9CE80660AD243893D56D9F125CD2D',
+      algodToken,
       'https://mainnet-api.4160.nodely.io',
       ''
     );
