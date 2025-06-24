@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Heart, Wallet, CheckCircle, AlertCircle, Loader2, User, Star, Gift, Download } from 'lucide-react';
+import { Heart, Wallet, CheckCircle, AlertCircle, Loader2, User, Star, Gift, Download, Info } from 'lucide-react';
 import { CreatorMetadata, localStorageManager } from '../utils/localStorage';
-import { transactionManager, TransactionResult } from '../utils/algorandTransactions';
+import { connectPera, signAndSendTipWithWallet } from '../utils/walletConnection';
 import { supabaseManager } from '../utils/supabase';
 import { TipHistory } from './TipHistory';
 import { PremiumContentViewer } from './PremiumContentViewer';
 import { QuickKashLogo } from './QuickKashLogo';
+import algosdk from 'algosdk';
 
 export const TipJarViewer: React.FC = () => {
   const { walletAddress } = useParams<{ walletAddress: string }>();
@@ -19,7 +20,7 @@ export const TipJarViewer: React.FC = () => {
   const [isSending, setIsSending] = useState(false);
   const [tipperAddress, setTipperAddress] = useState<string | null>(null);
   const [walletProvider, setWalletProvider] = useState<string>('');
-  const [transactionResult, setTransactionResult] = useState<TransactionResult | null>(null);
+  const [transactionResult, setTransactionResult] = useState<{ success: boolean; txId?: string; error?: string } | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [showPremiumContent, setShowPremiumContent] = useState(false);
   const [hasPremiumAccess, setHasPremiumAccess] = useState(false);
@@ -27,6 +28,13 @@ export const TipJarViewer: React.FC = () => {
   const [showRewardScreen, setShowRewardScreen] = useState(false);
 
   const tipAmounts = [1, 5, 10, 25];
+
+  // Initialize Algod client
+  const algodClient = new algosdk.Algodv2(
+    import.meta.env.VITE_ALGOD_TOKEN || '98D9CE80660AD243893D56D9F125CD2D',
+    'https://mainnet-api.4160.nodely.io',
+    ''
+  );
 
   useEffect(() => {
     loadCreatorData();
@@ -76,9 +84,24 @@ export const TipJarViewer: React.FC = () => {
     setError(null);
 
     try {
-      const address = await transactionManager.connectWallet(walletType);
+      let address: string | null = null;
+      
+      if (walletType === 'pera') {
+        address = await connectPera();
+        setWalletProvider('Pera Wallet');
+      } else {
+        // For MyAlgo, we'll use the existing wallet manager
+        const { walletManager } = await import('../utils/walletConnection');
+        const connection = await walletManager.connectMyAlgo();
+        address = connection.address;
+        setWalletProvider('MyAlgo Wallet');
+      }
+
+      if (!address) {
+        throw new Error('No wallet address received');
+      }
+
       setTipperAddress(address);
-      setWalletProvider(walletType === 'pera' ? 'Pera Wallet' : 'MyAlgo Wallet');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to connect wallet');
     } finally {
@@ -100,36 +123,39 @@ export const TipJarViewer: React.FC = () => {
     setError(null);
 
     try {
-      const result = await transactionManager.sendAlgoTip(
+      const devFeeAddress = import.meta.env.VITE_DEV_FEE_ADDRESS || 'QUICKKASH_DEV_WALLET_ADDRESS_HERE';
+      const walletType = walletProvider === 'Pera Wallet' ? 'pera' : 'myalgo';
+
+      const txId = await signAndSendTipWithWallet({
+        sender: tipperAddress,
+        recipient: walletAddress,
+        amountAlgo: finalAmount,
+        devFeeAddress,
+        walletType,
+        algodClient,
+        note: tipNote
+      });
+
+      setTransactionResult({ success: true, txId });
+      
+      // Record the tip in Supabase
+      await supabaseManager.recordTip(
         tipperAddress,
         walletAddress,
         finalAmount,
-        walletProvider,
+        txId,
         tipNote
       );
 
-      setTransactionResult(result);
-      
-      if (result.success && result.txId) {
-        // Record the tip in Supabase
-        await supabaseManager.recordTip(
-          tipperAddress,
-          walletAddress,
-          finalAmount,
-          result.txId,
-          tipNote
-        );
-
-        // Check if this unlocks premium access
-        if (finalAmount >= 10) {
-          setHasPremiumAccess(true);
-          setShowRewardScreen(true);
-        }
-      } else {
-        setError(result.error || 'Transaction failed');
+      // Check if this unlocks premium access
+      if (finalAmount >= 10) {
+        setHasPremiumAccess(true);
+        setShowRewardScreen(true);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Transaction failed');
+      const errorMessage = err instanceof Error ? err.message : 'Transaction failed';
+      setError(errorMessage);
+      setTransactionResult({ success: false, error: errorMessage });
     } finally {
       setIsSending(false);
     }
@@ -137,6 +163,18 @@ export const TipJarViewer: React.FC = () => {
 
   const getEffectiveAmount = () => {
     return selectedAmount === 0 ? parseFloat(customAmount) || 0 : selectedAmount;
+  };
+
+  const calculateFees = (amount: number) => {
+    const microAlgoAmount = algosdk.algosToMicroalgos(amount);
+    const devFee = Math.floor(microAlgoAmount * 0.02);
+    const creatorAmount = microAlgoAmount - devFee;
+    
+    return {
+      total: amount,
+      creator: algosdk.microalgosToAlgos(creatorAmount),
+      platform: algosdk.microalgosToAlgos(devFee)
+    };
   };
 
   const handleDownloadReward = () => {
@@ -295,6 +333,9 @@ export const TipJarViewer: React.FC = () => {
     );
   }
 
+  const effectiveAmount = getEffectiveAmount();
+  const fees = effectiveAmount > 0 ? calculateFees(effectiveAmount) : null;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/20 via-slate-900 to-slate-900"></div>
@@ -403,6 +444,32 @@ export const TipJarViewer: React.FC = () => {
                 />
                 <span className="text-muted font-medium">ALGO</span>
               </div>
+
+              {/* Fee Breakdown */}
+              {fees && (
+                <div className="mt-3 p-3 bg-slate-800/50 rounded-xl border border-slate-700/50">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Info className="w-4 h-4 text-slate-400" />
+                    <span className="text-sm font-medium text-slate-300">Transaction Breakdown</span>
+                  </div>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">To Creator:</span>
+                      <span className="text-emerald-400 font-medium">{fees.creator.toFixed(6)} ALGO</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Platform Fee (2%):</span>
+                      <span className="text-slate-400">{fees.platform.toFixed(6)} ALGO</span>
+                    </div>
+                    <div className="border-t border-slate-600 pt-1 mt-1">
+                      <div className="flex justify-between font-medium">
+                        <span className="text-slate-300">Total:</span>
+                        <span className="text-slate-300">{fees.total.toFixed(6)} ALGO</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Tip Note */}
