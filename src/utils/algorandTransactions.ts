@@ -1,5 +1,6 @@
 import algosdk from 'algosdk';
 import { PeraWalletConnect } from '@perawallet/connect';
+import { walletManager } from './walletConnection';
 
 export interface TransactionResult {
   success: boolean;
@@ -60,14 +61,8 @@ class AlgorandTransactionManager {
         const signedTxnArray = await this.peraWallet.signTransaction([txnArray]);
         signedTxn = signedTxnArray[0];
       } else if (walletProvider === 'MyAlgo Wallet') {
-        // Check if MyAlgo is available
-        if (!window.MyAlgoConnect) {
-          throw new Error('MyAlgo Wallet is not available. Please use Pera Wallet instead.');
-        }
-        
-        // Sign with MyAlgo
-        // @ts-ignore
-        const myAlgoWallet = new window.MyAlgoConnect();
+        // Sign with MyAlgo using the npm package
+        const myAlgoWallet = walletManager.getMyAlgoInstance();
         const signedTxnArray = await myAlgoWallet.signTransaction(txn.toByte());
         signedTxn = signedTxnArray.blob;
       } else {
@@ -134,13 +129,7 @@ class AlgorandTransactionManager {
       const accounts = await this.peraWallet.connect();
       return accounts[0];
     } else {
-      // Check if MyAlgo is available
-      if (!window.MyAlgoConnect) {
-        throw new Error('MyAlgo Wallet is not available. Please use Pera Wallet instead.');
-      }
-      
-      // @ts-ignore
-      const myAlgoWallet = new window.MyAlgoConnect();
+      const myAlgoWallet = walletManager.getMyAlgoInstance();
       const accounts = await myAlgoWallet.connect();
       return accounts[0].address;
     }

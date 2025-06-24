@@ -1,4 +1,5 @@
 import algosdk from 'algosdk';
+import { walletManager } from './walletConnection';
 
 export interface GroupTransactionResult {
   success: boolean;
@@ -119,13 +120,8 @@ class GroupTransactionBuilder {
       return signedTxnArray;
 
     } else if (walletProvider === 'myalgo') {
-      // @ts-ignore - MyAlgo is loaded via CDN
-      if (!window.MyAlgoConnect) {
-        throw new Error('MyAlgo Wallet not available');
-      }
-
-      // @ts-ignore
-      const myAlgoWallet = new window.MyAlgoConnect();
+      // Use MyAlgo from the npm package
+      const myAlgoWallet = walletManager.getMyAlgoInstance();
       
       // Convert transactions to bytes for MyAlgo
       const txnBytes = txnGroup.map(txn => txn.toByte());

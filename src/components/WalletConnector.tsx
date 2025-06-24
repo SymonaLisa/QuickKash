@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Wallet, Shield, Zap, Sparkles, AlertTriangle } from 'lucide-react';
 import { walletManager, WalletConnection } from '../utils/walletConnection';
 import { QuickKashLogo } from './QuickKashLogo';
@@ -10,16 +10,6 @@ interface WalletConnectorProps {
 export const WalletConnector: React.FC<WalletConnectorProps> = ({ onWalletConnected }) => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [myAlgoAvailable, setMyAlgoAvailable] = useState(false);
-
-  useEffect(() => {
-    // Check MyAlgo availability on component mount
-    checkMyAlgoAvailability();
-  }, []);
-
-  const checkMyAlgoAvailability = () => {
-    setMyAlgoAvailable(walletManager.isMyAlgoAvailable());
-  };
 
   const handleWalletConnect = async (walletType: 'pera' | 'myalgo') => {
     setIsConnecting(true);
@@ -97,28 +87,13 @@ export const WalletConnector: React.FC<WalletConnectorProps> = ({ onWalletConnec
             <button
               onClick={() => handleWalletConnect('myalgo')}
               disabled={isConnecting}
-              className="w-full flex items-center justify-center space-x-3 p-4 btn-secondary disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none group relative"
+              className="w-full flex items-center justify-center space-x-3 p-4 btn-secondary disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none group"
             >
               <Zap className="w-5 h-5 group-hover:scale-110 transition-transform" />
               <span className="font-semibold">
                 {isConnecting ? 'Connecting...' : 'Connect with MyAlgo'}
               </span>
-              {!myAlgoAvailable && (
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full"></div>
-              )}
             </button>
-
-            {!myAlgoAvailable && (
-              <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 backdrop-blur-sm">
-                <div className="flex items-start space-x-2">
-                  <AlertTriangle className="w-4 h-4 mt-0.5 text-yellow-400 flex-shrink-0" />
-                  <div className="text-yellow-300 text-sm">
-                    <p className="font-medium mb-1">MyAlgo Wallet Loading</p>
-                    <p>MyAlgo may take a moment to load. If it fails, please use Pera Wallet instead.</p>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
           <div className="mt-6 pt-6 border-t border-slate-700">
