@@ -60,6 +60,11 @@ class AlgorandTransactionManager {
         const signedTxnArray = await this.peraWallet.signTransaction([txnArray]);
         signedTxn = signedTxnArray[0];
       } else if (walletProvider === 'MyAlgo Wallet') {
+        // Check if MyAlgo is available
+        if (!window.MyAlgoConnect) {
+          throw new Error('MyAlgo Wallet is not available. Please use Pera Wallet instead.');
+        }
+        
         // Sign with MyAlgo
         // @ts-ignore
         const myAlgoWallet = new window.MyAlgoConnect();
@@ -81,6 +86,27 @@ class AlgorandTransactionManager {
       };
     } catch (error) {
       console.error('Transaction failed:', error);
+      
+      // Provide more specific error messages
+      if (error instanceof Error) {
+        if (error.message.includes('User rejected')) {
+          return {
+            success: false,
+            error: 'Transaction cancelled by user'
+          };
+        } else if (error.message.includes('insufficient funds')) {
+          return {
+            success: false,
+            error: 'Insufficient ALGO balance for this transaction'
+          };
+        } else if (error.message.includes('MyAlgo')) {
+          return {
+            success: false,
+            error: 'MyAlgo Wallet connection issue. Please try using Pera Wallet instead.'
+          };
+        }
+      }
+      
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Transaction failed'
@@ -108,6 +134,11 @@ class AlgorandTransactionManager {
       const accounts = await this.peraWallet.connect();
       return accounts[0];
     } else {
+      // Check if MyAlgo is available
+      if (!window.MyAlgoConnect) {
+        throw new Error('MyAlgo Wallet is not available. Please use Pera Wallet instead.');
+      }
+      
       // @ts-ignore
       const myAlgoWallet = new window.MyAlgoConnect();
       const accounts = await myAlgoWallet.connect();
