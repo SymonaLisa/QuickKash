@@ -5,6 +5,7 @@ import { CreatorSetup } from './components/CreatorSetup';
 import { TipJarCreated } from './components/TipJarCreated';
 import { TipJarViewer } from './components/TipJarViewer';
 import { TipButtonDemo } from './components/TipButtonDemo';
+import { CreatorProfileManager } from './components/CreatorProfileManager';
 import { AdminTrigger } from './components/AdminTrigger';
 import { WalletConnection } from './utils/walletConnection';
 import { CreatorMetadata } from './utils/localStorage';
@@ -59,7 +60,8 @@ function App() {
       <div className="relative">
         <Routes>
           <Route path="/" element={<CreateTipJar />} />
-          <Route path="/creator/:walletAddress" element={<TipJarViewer />} />
+          <Route path="/creator/:walletAddress" element={<CreatorProfileManager />} />
+          <Route path="/tip/:walletAddress" element={<TipJarViewer />} />
           <Route path="/demo" element={<TipButtonDemo />} />
         </Routes>
         
