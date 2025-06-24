@@ -6,6 +6,7 @@ import { TipJarCreated } from './components/TipJarCreated';
 import { TipJarViewer } from './components/TipJarViewer';
 import { TipButtonDemo } from './components/TipButtonDemo';
 import { CreatorProfileManager } from './components/CreatorProfileManager';
+import { CreatorDashboard } from './components/CreatorDashboard';
 import { AdminTrigger } from './components/AdminTrigger';
 import { WalletConnection } from './utils/walletConnection';
 import { CreatorMetadata } from './utils/localStorage';
@@ -63,6 +64,7 @@ function App() {
           <Route path="/creator/:walletAddress" element={<CreatorProfileManager />} />
           <Route path="/tip/:walletAddress" element={<TipJarViewer />} />
           <Route path="/demo" element={<TipButtonDemo />} />
+          <Route path="/dashboard" element={<CreatorDashboard />} />
         </Routes>
         
         {/* Admin Access Trigger */}
