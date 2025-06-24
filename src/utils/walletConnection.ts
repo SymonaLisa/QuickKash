@@ -35,7 +35,7 @@ class WalletManager {
     try {
       // Check if MyAlgo script is loaded
       if (!window.MyAlgoConnect) {
-        // Try to load MyAlgo script dynamically
+        // Try to load MyAlgo script dynamically with retry mechanism
         await this.loadMyAlgoScript();
       }
       
@@ -74,7 +74,7 @@ class WalletManager {
     }
   }
 
-  private async loadMyAlgoScript(): Promise<void> {
+  private async loadMyAlgoScript(maxRetries: number = 3, retryDelay: number = 1000): Promise<void> {
     return new Promise((resolve, reject) => {
       // Check if script is already loaded
       if (window.MyAlgoConnect) {
@@ -82,42 +82,59 @@ class WalletManager {
         return;
       }
 
-      // Check if script tag already exists
-      const existingScript = document.querySelector('script[src*="myalgo.min.js"]');
-      if (existingScript) {
-        // Script exists but might not be loaded yet
-        existingScript.addEventListener('load', () => resolve());
-        existingScript.addEventListener('error', () => reject(new Error('Failed to load MyAlgo script')));
-        return;
-      }
+      let attempts = 0;
 
-      // Create and load the script
-      const script = document.createElement('script');
-      script.src = 'https://wallet.myalgo.com/js/myalgo.min.js';
-      script.async = true;
-      script.defer = true;
-      
-      script.onload = () => {
-        // Give it a moment to initialize
-        setTimeout(() => {
-          if (window.MyAlgoConnect) {
-            resolve();
-          } else {
-            reject(new Error('MyAlgo script loaded but MyAlgoConnect not available'));
+      const attemptLoad = () => {
+        attempts++;
+
+        // Remove any existing failed script elements
+        const existingScripts = document.querySelectorAll('script[src*="myalgo.min.js"]');
+        existingScripts.forEach(script => {
+          if (script.parentNode) {
+            script.parentNode.removeChild(script);
           }
-        }, 100);
+        });
+
+        // Create and load the script
+        const script = document.createElement('script');
+        script.src = 'https://wallet.myalgo.com/js/myalgo.min.js';
+        script.async = true;
+        script.defer = true;
+        
+        script.onload = () => {
+          // Give it a moment to initialize
+          setTimeout(() => {
+            if (window.MyAlgoConnect) {
+              resolve();
+            } else {
+              handleFailure('MyAlgo script loaded but MyAlgoConnect not available');
+            }
+          }, 100);
+        };
+        
+        script.onerror = () => {
+          handleFailure('Failed to load MyAlgo Wallet script');
+        };
+        
+        document.head.appendChild(script);
+        
+        // Timeout for this attempt
+        setTimeout(() => {
+          handleFailure('MyAlgo script loading timeout');
+        }, 10000);
       };
-      
-      script.onerror = () => {
-        reject(new Error('Failed to load MyAlgo Wallet script'));
+
+      const handleFailure = (errorMessage: string) => {
+        if (attempts < maxRetries) {
+          console.warn(`MyAlgo script loading attempt ${attempts} failed: ${errorMessage}. Retrying in ${retryDelay}ms...`);
+          setTimeout(attemptLoad, retryDelay);
+        } else {
+          reject(new Error(`Failed to load MyAlgo script after ${maxRetries} attempts: ${errorMessage}`));
+        }
       };
-      
-      document.head.appendChild(script);
-      
-      // Timeout after 10 seconds
-      setTimeout(() => {
-        reject(new Error('MyAlgo script loading timeout'));
-      }, 10000);
+
+      // Start the first attempt
+      attemptLoad();
     });
   }
 
