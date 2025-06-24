@@ -263,6 +263,12 @@ export const TipJarViewer: React.FC = () => {
             Your {finalAmount} ALGO tip has been successfully sent to {creator?.displayName}!
           </p>
 
+          <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 mb-6 backdrop-blur-sm">
+            <p className="text-emerald-300 text-sm font-medium">
+              💡 Note: A 2% platform fee was automatically deducted to support QuickKash development
+            </p>
+          </div>
+
           {transactionResult.txId && (
             <div className="bg-slate-800/50 rounded-xl p-4 mb-6 border border-slate-700/50">
               <p className="text-sm text-muted mb-1">Transaction ID</p>
@@ -348,6 +354,7 @@ export const TipJarViewer: React.FC = () => {
                 <div className="text-sm text-emerald-200 space-y-1">
                   <p>⭐ Tip 10+ ALGO → Get instant access to exclusive thank-you content</p>
                   <p>📁 Download premium rewards and bonus materials!</p>
+                  <p>💡 2% platform fee supports QuickKash development</p>
                 </div>
               </div>
             </div>
@@ -478,7 +485,7 @@ export const TipJarViewer: React.FC = () => {
             <div className="mt-6 pt-6 border-t border-slate-700">
               <div className="flex flex-col sm:flex-row items-center justify-between space-y-2 sm:space-y-0">
                 <p className="text-xs text-muted">
-                  Tips are sent directly to the creator's wallet on Algorand
+                  Tips are sent directly to the creator's wallet on Algorand (98% to creator, 2% platform fee)
                 </p>
                 <div className="flex space-x-4">
                   <button

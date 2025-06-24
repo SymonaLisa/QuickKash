@@ -1,5 +1,6 @@
 import { PeraWalletConnect } from '@perawallet/connect';
 import MyAlgoConnect from '@randlabs/myalgo-connect';
+import algosdk from 'algosdk';
 
 export interface WalletConnection {
   address: string;
@@ -9,6 +10,7 @@ export interface WalletConnection {
 class WalletManager {
   private peraWallet: PeraWalletConnect;
   private myAlgoWallet: MyAlgoConnect;
+  private algodClient: algosdk.Algodv2;
 
   constructor() {
     this.peraWallet = new PeraWalletConnect({
@@ -16,6 +18,14 @@ class WalletManager {
     });
     
     this.myAlgoWallet = new MyAlgoConnect();
+    
+    // Initialize Algod client
+    const algodToken = import.meta.env.VITE_ALGOD_TOKEN || '98D9CE80660AD243893D56D9F125CD2D';
+    this.algodClient = new algosdk.Algodv2(
+      algodToken,
+      'https://mainnet-api.4160.nodely.io',
+      ''
+    );
   }
 
   async connectPera(): Promise<WalletConnection> {
@@ -83,6 +93,155 @@ class WalletManager {
   getMyAlgoInstance(): MyAlgoConnect {
     return this.myAlgoWallet;
   }
+
+  // Get Pera Wallet instance
+  getPeraInstance(): PeraWalletConnect {
+    return this.peraWallet;
+  }
+
+  // Get Algod client
+  getAlgodClient(): algosdk.Algodv2 {
+    return this.algodClient;
+  }
 }
 
 export const walletManager = new WalletManager();
+
+// Export the new functions for compatibility with your approach
+export const connectPera = async (): Promise<string | null> => {
+  try {
+    const connection = await walletManager.connectPera();
+    return connection.address;
+  } catch (err) {
+    console.error("Pera Wallet connection failed:", err);
+    return null;
+  }
+};
+
+export const disconnectPera = async () => {
+  walletManager.disconnectPera();
+};
+
+export const signAndSendTip = async ({
+  sender,
+  recipient,
+  amountAlgo,
+  devFeeAddress = 'QUICKKASH_DEV_WALLET_ADDRESS_HERE', // Default dev fee address
+  algodClient,
+}: {
+  sender: string;
+  recipient: string;
+  amountAlgo: number;
+  devFeeAddress?: string;
+  algodClient?: algosdk.Algodv2;
+}) => {
+  const client = algodClient || walletManager.getAlgodClient();
+  const params = await client.getTransactionParams().do();
+
+  const microAlgoAmount = algosdk.algosToMicroalgos(amountAlgo);
+  const devFee = Math.floor(microAlgoAmount * 0.02);
+  const creatorAmount = microAlgoAmount - devFee;
+
+  const txn1 = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+    from: sender,
+    to: recipient,
+    amount: creatorAmount,
+    suggestedParams: params,
+    note: new Uint8Array(Buffer.from('QuickKash Tip (98%)')),
+  });
+
+  const txn2 = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+    from: sender,
+    to: devFeeAddress,
+    amount: devFee,
+    suggestedParams: params,
+    note: new Uint8Array(Buffer.from('QuickKash Platform Fee (2%)')),
+  });
+
+  const groupId = algosdk.computeGroupID([txn1, txn2]);
+  txn1.group = groupId;
+  txn2.group = groupId;
+
+  const peraWallet = walletManager.getPeraInstance();
+  const signedTxns = await peraWallet.signTransaction([
+    { txn: txn1, signers: [sender] },
+    { txn: txn2, signers: [sender] },
+  ]);
+
+  const { txId } = await client.sendRawTransaction(signedTxns).do();
+
+  await algosdk.waitForConfirmation(client, txId, 4);
+  return txId;
+};
+
+// Enhanced version that supports both Pera and MyAlgo
+export const signAndSendTipWithWallet = async ({
+  sender,
+  recipient,
+  amountAlgo,
+  devFeeAddress = 'QUICKKASH_DEV_WALLET_ADDRESS_HERE',
+  walletType = 'pera',
+  algodClient,
+  note,
+}: {
+  sender: string;
+  recipient: string;
+  amountAlgo: number;
+  devFeeAddress?: string;
+  walletType?: 'pera' | 'myalgo';
+  algodClient?: algosdk.Algodv2;
+  note?: string;
+}) => {
+  const client = algodClient || walletManager.getAlgodClient();
+  const params = await client.getTransactionParams().do();
+
+  const microAlgoAmount = algosdk.algosToMicroalgos(amountAlgo);
+  const devFee = Math.floor(microAlgoAmount * 0.02);
+  const creatorAmount = microAlgoAmount - devFee;
+
+  // Create note with QuickKash prefix
+  const noteText = note ? `QuickKash: ${note}` : 'QuickKash Tip';
+  const devNoteText = 'QuickKash Platform Fee (2%)';
+
+  const txn1 = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+    from: sender,
+    to: recipient,
+    amount: creatorAmount,
+    suggestedParams: params,
+    note: new Uint8Array(Buffer.from(noteText)),
+  });
+
+  const txn2 = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+    from: sender,
+    to: devFeeAddress,
+    amount: devFee,
+    suggestedParams: params,
+    note: new Uint8Array(Buffer.from(devNoteText)),
+  });
+
+  const groupId = algosdk.computeGroupID([txn1, txn2]);
+  txn1.group = groupId;
+  txn2.group = groupId;
+
+  let signedTxns;
+
+  if (walletType === 'pera') {
+    const peraWallet = walletManager.getPeraInstance();
+    signedTxns = await peraWallet.signTransaction([
+      { txn: txn1, signers: [sender] },
+      { txn: txn2, signers: [sender] },
+    ]);
+  } else if (walletType === 'myalgo') {
+    const myAlgoWallet = walletManager.getMyAlgoInstance();
+    const txnBytes = [txn1.toByte(), txn2.toByte()];
+    const signedTxnArray = await myAlgoWallet.signTransaction(txnBytes);
+    signedTxns = signedTxnArray.map((signed: any) => signed.blob);
+  } else {
+    throw new Error('Unsupported wallet type');
+  }
+
+  const { txId } = await client.sendRawTransaction(signedTxns).do();
+
+  await algosdk.waitForConfirmation(client, txId, 4);
+  return txId;
+};
