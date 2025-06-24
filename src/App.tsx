@@ -8,6 +8,7 @@ import { TipButtonDemo } from './components/TipButtonDemo';
 import { CreatorProfileManager } from './components/CreatorProfileManager';
 import { CreatorDashboard } from './components/CreatorDashboard';
 import { HomePage } from './components/HomePage';
+import { ShortlinkRedirect } from './components/ShortlinkRedirect';
 import { AdminTrigger } from './components/AdminTrigger';
 import { WalletConnection } from './utils/walletConnection';
 import { CreatorMetadata } from './utils/localStorage';
@@ -67,6 +68,8 @@ function App() {
           <Route path="/tip/:walletAddress" element={<TipJarViewer />} />
           <Route path="/demo" element={<TipButtonDemo />} />
           <Route path="/dashboard" element={<CreatorDashboard />} />
+          {/* Shortlink redirect route */}
+          <Route path="/@:slug" element={<ShortlinkRedirect />} />
         </Routes>
         
         {/* Admin Access Trigger */}

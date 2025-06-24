@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2025 QuickKash
+Copyright (c) 2025 QuickKash - Decentralized Tip Jars on Algorand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +19,71 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+## Third-Party Licenses
+
+This project includes or depends on the following third-party software:
+
+### Algorand SDK
+- License: MIT License
+- Copyright: Algorand, Inc.
+- Used for blockchain interactions and transaction management
+
+### Supabase
+- License: Apache License 2.0
+- Copyright: Supabase, Inc.
+- Used for database and backend services
+
+### React & React Ecosystem
+- License: MIT License
+- Copyright: Facebook, Inc. and its affiliates
+- Used for frontend framework and components
+
+### Tailwind CSS
+- License: MIT License
+- Copyright: Tailwind Labs, Inc.
+- Used for styling and design system
+
+### Lucide React
+- License: ISC License
+- Copyright: Lucide Contributors
+- Used for icons and visual elements
+
+### Pera Wallet Connect
+- License: MIT License
+- Copyright: Pera Wallet
+- Used for Algorand wallet integration
+
+### MyAlgo Connect
+- License: MIT License
+- Copyright: Rand Labs
+- Used for alternative Algorand wallet integration
+
+### RevenueCat
+- License: MIT License
+- Copyright: RevenueCat, Inc.
+- Used for subscription management (optional)
+
+---
+
+## Attribution
+
+QuickKash is built with love for the creator economy and powered by:
+
+- **Algorand Blockchain** - For fast, secure, and sustainable transactions
+- **Supabase** - For reliable backend infrastructure
+- **React** - For modern, responsive user interfaces
+- **Tailwind CSS** - For beautiful, consistent design
+- **Open Source Community** - For the amazing tools and libraries
+
+## Contributing
+
+By contributing to this project, you agree that your contributions will be licensed under the same MIT License that covers the project.
+
+## Disclaimer
+
+This software is provided for educational and development purposes. Users are responsible for complying with all applicable laws and regulations when using this software. The authors and contributors are not responsible for any misuse of this software or any damages that may result from its use.
+
+QuickKash is a decentralized application that facilitates peer-to-peer transactions on the Algorand blockchain. Users maintain full control of their private keys and funds. No financial advice is provided.

@@ -20,7 +20,8 @@ import {
   Globe,
   BarChart3,
   LogOut,
-  Shield
+  Shield,
+  Link
 } from 'lucide-react';
 import { connectPera, disconnectPera } from '../utils/walletConnection';
 import { supabaseManager } from '../utils/supabase';
@@ -28,6 +29,7 @@ import { checkProStatus } from '../utils/checkProStatus';
 import { TipHistory } from './TipHistory';
 import { PremiumContentManager } from './PremiumContentManager';
 import { ProBrandingCustomizer } from './ProBrandingCustomizer';
+import { ShortlinkManager } from './ShortlinkManager';
 import { QuickKashLogo } from './QuickKashLogo';
 
 interface CreatorProfile {
@@ -54,7 +56,7 @@ export const CreatorDashboard: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'profile' | 'branding' | 'content' | 'analytics'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'branding' | 'content' | 'analytics' | 'shortlinks'>('profile');
   const [isProfileLive, setIsProfileLive] = useState(false);
   const [tipStats, setTipStats] = useState({ total: 0, count: 0, premiumCount: 0 });
   const [copied, setCopied] = useState(false);
@@ -328,9 +330,10 @@ export const CreatorDashboard: React.FC = () => {
 
         {/* Navigation Tabs */}
         <div className="glass-card p-2 mb-6">
-          <div className="flex space-x-2">
+          <div className="flex space-x-2 overflow-x-auto">
             {[
               { id: 'profile', label: 'Profile', icon: User },
+              { id: 'shortlinks', label: 'Shortlinks', icon: Link },
               { id: 'branding', label: 'Branding', icon: Palette },
               { id: 'content', label: 'Content', icon: Settings },
               { id: 'analytics', label: 'Analytics', icon: BarChart3 }
@@ -340,7 +343,7 @@ export const CreatorDashboard: React.FC = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 whitespace-nowrap ${
                     activeTab === tab.id
                       ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                       : 'text-slate-400 hover:text-slate-300 hover:bg-slate-700/50'
@@ -506,6 +509,14 @@ export const CreatorDashboard: React.FC = () => {
                 )}
               </div>
             </div>
+          )}
+
+          {/* Shortlinks Tab */}
+          {activeTab === 'shortlinks' && walletAddress && profile && (
+            <ShortlinkManager 
+              walletAddress={walletAddress}
+              creatorName={profile.name}
+            />
           )}
 
           {/* Branding Tab */}
