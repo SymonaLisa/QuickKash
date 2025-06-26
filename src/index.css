@@ -16,8 +16,16 @@
     @apply bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl shadow-lg;
   }
   
+  .btn-primary:focus-visible {
+    @apply outline-none ring-4 ring-emerald-400/70;
+  }
+  
   .btn-secondary {
     @apply bg-gradient-to-r from-slate-700 to-slate-600 hover:from-slate-600 hover:to-slate-500 text-white font-medium rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg;
+  }
+  
+  .btn-secondary:focus-visible {
+    @apply outline-none ring-4 ring-emerald-400/70;
   }
   
   .card {
@@ -26,18 +34,41 @@
   
   .card-elevated {
     @apply bg-slate-800/95 backdrop-blur-lg rounded-3xl shadow-2xl border border-slate-700/60;
+    transition: box-shadow 0.3s ease;
+  }
+
+  .card-elevated:hover {
+    @apply shadow-[0_8px_30px_rgba(16,185,129,0.4)];
   }
   
   .input-field {
     @apply w-full px-4 py-3 border-2 border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors bg-slate-700/50 text-slate-100 placeholder-slate-400;
   }
   
+  .input-field:focus-visible {
+    @apply ring-2 ring-emerald-500 border-emerald-500;
+  }
+  
   .quickkash-logo {
     @apply text-3xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent;
+    transition: background-position 0.3s ease;
+    background-size: 200% 100%;
+    background-position: left center;
+  }
+  
+  .quickkash-logo:hover {
+    background-position: right center;
   }
   
   .quickkash-logo-large {
     @apply text-4xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent;
+    transition: background-position 0.3s ease;
+    background-size: 200% 100%;
+    background-position: left center;
+  }
+
+  .quickkash-logo-large:hover {
+    background-position: right center;
   }
 
   .glass-card {
