@@ -20,7 +20,7 @@ class GroupTransactionBuilder {
   constructor() {
     // Using Nodely's mainnet API with token from environment variables
     const algodToken = import.meta.env.VITE_ALGOD_TOKEN || '98D9CE80660AD243893D56D9F125CD2D';
-    
+
     this.algodClient = new algosdk.Algodv2(
       algodToken,
       'https://mainnet-api.4160.nodely.io',
@@ -43,12 +43,12 @@ class GroupTransactionBuilder {
 
       // Convert ALGO to microAlgos
       const totalMicroAlgos = Math.floor(tipAmount * 1e6);
-      
+
       // Calculate split amounts (98% to creator, 2% to platform)
       const creatorAmount = Math.floor(totalMicroAlgos * 0.98);
       const platformAmount = totalMicroAlgos - creatorAmount; // Ensures exact total
 
-      // Validate amounts
+      // Validate amounts (minimum fee + minimum transfer amount)
       if (creatorAmount < 1000 || platformAmount < 1000) {
         throw new Error('Tip amount too small - minimum 0.001 ALGO required');
       }
@@ -74,8 +74,6 @@ class GroupTransactionBuilder {
       // Group the transactions
       const txnGroup = [creatorTxn, platformTxn];
       const groupId = algosdk.computeGroupID(txnGroup);
-      
-      // Assign group ID to each transaction
       txnGroup.forEach(txn => {
         txn.group = groupId;
       });
@@ -85,14 +83,13 @@ class GroupTransactionBuilder {
 
       return {
         success: true,
-        signedTxns
+        signedTxns,
       };
-
     } catch (error) {
       console.error('Group transaction failed:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Transaction group creation failed'
+        error: error instanceof Error ? error.message : 'Transaction group creation failed',
       };
     }
   }
@@ -106,29 +103,26 @@ class GroupTransactionBuilder {
     walletProvider: 'pera' | 'myalgo'
   ): Promise<Uint8Array[]> {
     if (walletProvider === 'pera') {
-      // Import Pera Wallet for signing
       const { PeraWalletConnect } = await import('@perawallet/connect');
       const peraWallet = new PeraWalletConnect({ shouldShowSignTxnToast: false });
 
       // Prepare transactions for Pera Wallet
       const txnArray = txnGroup.map(txn => ({
-        txn,
-        signers: [senderAddress]
+        txn: txn.toByte(),
+        signers: [senderAddress],
       }));
 
-      const signedTxnArray = await peraWallet.signTransaction([txnArray]);
-      return signedTxnArray;
-
+      const signedTxnArray = await peraWallet.signTransaction(txnArray);
+      // peraWallet.signTransaction returns array of { id, blob } objects
+      return signedTxnArray.map(txn => txn.blob);
     } else if (walletProvider === 'myalgo') {
-      // Use MyAlgo from the npm package
       const myAlgoWallet = walletManager.getMyAlgoInstance();
-      
+
       // Convert transactions to bytes for MyAlgo
       const txnBytes = txnGroup.map(txn => txn.toByte());
       const signedTxnArray = await myAlgoWallet.signTransaction(txnBytes);
-      
-      return signedTxnArray.map((signed: any) => signed.blob);
 
+      return signedTxnArray.map((signed: any) => signed.blob);
     } else {
       throw new Error('Unsupported wallet provider');
     }
@@ -141,23 +135,21 @@ class GroupTransactionBuilder {
     try {
       // Submit the group transaction
       const { txId } = await this.algodClient.sendRawTransaction(signedTxns).do();
-      
+
       // Wait for confirmation
       await this.waitForConfirmation(txId);
-      
-      // Extract all transaction IDs from the group
-      const txIds = await this.getGroupTransactionIds(txId);
-      
+
+      // Return the group transaction ID
+      // For full group tx IDs, you'd query the indexer by group ID (not implemented here)
       return {
         success: true,
-        txIds
+        txIds: [txId],
       };
-
     } catch (error) {
       console.error('Transaction submission failed:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Transaction submission failed'
+        error: error instanceof Error ? error.message : 'Transaction submission failed',
       };
     }
   }
@@ -167,38 +159,16 @@ class GroupTransactionBuilder {
    */
   private async waitForConfirmation(txId: string): Promise<void> {
     let lastRound = (await this.algodClient.status().do())['last-round'];
-    
+
     while (true) {
       const pendingInfo = await this.algodClient.pendingTransactionInformation(txId).do();
-      
+
       if (pendingInfo['confirmed-round'] !== null && pendingInfo['confirmed-round'] > 0) {
         break;
       }
-      
+
       lastRound++;
       await this.algodClient.statusAfterBlock(lastRound).do();
-    }
-  }
-
-  /**
-   * Gets all transaction IDs from a group transaction
-   */
-  private async getGroupTransactionIds(groupTxId: string): Promise<string[]> {
-    try {
-      const pendingInfo = await this.algodClient.pendingTransactionInformation(groupTxId).do();
-      const groupId = pendingInfo.txn.txn.grp;
-      
-      if (!groupId) {
-        return [groupTxId];
-      }
-
-      // For now, return the main transaction ID
-      // In a full implementation, you'd query the indexer for all group transactions
-      return [groupTxId];
-      
-    } catch (error) {
-      console.error('Failed to get group transaction IDs:', error);
-      return [groupTxId];
     }
   }
 
@@ -209,11 +179,11 @@ class GroupTransactionBuilder {
     const totalMicroAlgos = Math.floor(tipAmountAlgo * 1e6);
     const creatorAmount = Math.floor(totalMicroAlgos * 0.98);
     const platformAmount = totalMicroAlgos - creatorAmount;
-    
+
     return {
       creatorAmount,
       platformAmount,
-      totalMicroAlgos
+      totalMicroAlgos,
     };
   }
 
@@ -227,7 +197,9 @@ class GroupTransactionBuilder {
 
 export const groupTransactionBuilder = new GroupTransactionBuilder();
 
-// Example usage function
+/**
+ * Example usage function to send tip with platform fee split
+ */
 export async function sendTipWithPlatformFee(
   tipAmount: number,
   senderWallet: string,
@@ -235,24 +207,26 @@ export async function sendTipWithPlatformFee(
   platformWallet: string,
   walletProvider: 'pera' | 'myalgo'
 ): Promise<{ success: boolean; txIds?: string[]; error?: string }> {
-  
   // Build and sign the group transaction
-  const groupResult = await groupTransactionBuilder.buildTipSplitTransaction({
-    tipAmount,
-    senderWallet,
-    creatorWallet,
-    platformWallet
-  }, walletProvider);
+  const groupResult = await groupTransactionBuilder.buildTipSplitTransaction(
+    {
+      tipAmount,
+      senderWallet,
+      creatorWallet,
+      platformWallet,
+    },
+    walletProvider
+  );
 
   if (!groupResult.success || !groupResult.signedTxns) {
     return {
       success: false,
-      error: groupResult.error
+      error: groupResult.error,
     };
   }
 
   // Submit the signed transactions
   const submitResult = await groupTransactionBuilder.submitTransactionGroup(groupResult.signedTxns);
-  
+
   return submitResult;
 }
