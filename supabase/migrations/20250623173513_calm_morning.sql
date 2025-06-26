@@ -30,7 +30,7 @@ BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.table_constraints 
     WHERE constraint_name = 'valid_primary_color' 
-    AND table_name = 'creators'
+      AND table_name = 'creators'
   ) THEN
     ALTER TABLE creators ADD CONSTRAINT valid_primary_color 
       CHECK (custom_primary_color IS NULL OR custom_primary_color ~ '^#[0-9A-Fa-f]{6}$');
@@ -39,7 +39,7 @@ BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.table_constraints 
     WHERE constraint_name = 'valid_secondary_color' 
-    AND table_name = 'creators'
+      AND table_name = 'creators'
   ) THEN
     ALTER TABLE creators ADD CONSTRAINT valid_secondary_color 
       CHECK (custom_secondary_color IS NULL OR custom_secondary_color ~ '^#[0-9A-Fa-f]{6}$');
@@ -48,7 +48,7 @@ BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.table_constraints 
     WHERE constraint_name = 'valid_custom_font' 
-    AND table_name = 'creators'
+      AND table_name = 'creators'
   ) THEN
     ALTER TABLE creators ADD CONSTRAINT valid_custom_font 
       CHECK (custom_font IS NULL OR length(custom_font) <= 50);
@@ -57,7 +57,7 @@ BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.table_constraints 
     WHERE constraint_name = 'valid_brand_name' 
-    AND table_name = 'creators'
+      AND table_name = 'creators'
   ) THEN
     ALTER TABLE creators ADD CONSTRAINT valid_brand_name 
       CHECK (brand_name IS NULL OR length(brand_name) <= 100);
@@ -73,12 +73,12 @@ CREATE POLICY "Pro creators can update own branding"
   FOR UPDATE
   TO public
   USING (
-    -- Limit rows that can be updated to Pro creators (manual toggle or active subscription)
+    -- Allow update only if the user is Pro (manual toggle or active subscription)
     is_pro = true OR
     (subscription_tier IN ('pro', 'creator_plus') AND subscription_status = 'active')
   )
   WITH CHECK (
-    -- Only allow updates if the row belongs to a Pro creator (same condition)
+    -- Ensure update only affects rows meeting the same condition
     is_pro = true OR
     (subscription_tier IN ('pro', 'creator_plus') AND subscription_status = 'active')
   );
