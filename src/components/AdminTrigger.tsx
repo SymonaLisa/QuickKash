@@ -14,17 +14,15 @@ export const AdminTrigger: React.FC<AdminTriggerProps> = ({ className = '' }) =>
   // Secret admin access: 5 clicks within 3 seconds
   const handleSecretClick = () => {
     const now = Date.now();
-    
-    if (now - lastClickTime > 3000) {
-      // Reset if more than 3 seconds since last click
-      setClickCount(1);
-    } else {
-      setClickCount(prev => prev + 1);
+
+    let newCount = 1;
+    if (now - lastClickTime <= 3000) {
+      newCount = clickCount + 1;
     }
-    
+    setClickCount(newCount);
     setLastClickTime(now);
-    
-    if (clickCount >= 4) { // 5th click (0-indexed)
+
+    if (newCount >= 5) {
       setShowAdminPanel(true);
       setClickCount(0);
     }
@@ -37,6 +35,7 @@ export const AdminTrigger: React.FC<AdminTriggerProps> = ({ className = '' }) =>
         onClick={handleSecretClick}
         className={`opacity-0 hover:opacity-20 transition-opacity duration-300 ${className}`}
         title="Admin Access"
+        aria-label="Secret Admin Access Trigger"
       >
         <Shield className="w-4 h-4" />
       </button>
@@ -47,6 +46,7 @@ export const AdminTrigger: React.FC<AdminTriggerProps> = ({ className = '' }) =>
           onClick={() => setShowAdminPanel(true)}
           className="fixed bottom-4 right-4 w-12 h-12 bg-red-600 hover:bg-red-500 rounded-full flex items-center justify-center shadow-lg transition-colors z-40"
           title="Admin Panel (Dev Mode)"
+          aria-label="Open Admin Panel (Dev Mode)"
         >
           <Settings className="w-6 h-6 text-white" />
         </button>
