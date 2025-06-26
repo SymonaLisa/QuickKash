@@ -50,10 +50,7 @@ export const TipHistory: React.FC<TipHistoryProps> = ({ walletAddress }) => {
       <div className="glass-card p-6">
         <div className="text-center py-8">
           <p className="text-red-400">{error}</p>
-          <button
-            onClick={loadTipHistory}
-            className="mt-3 px-4 py-2 btn-secondary"
-          >
+          <button onClick={loadTipHistory} className="mt-3 px-4 py-2 btn-secondary">
             Retry
           </button>
         </div>
@@ -105,19 +102,17 @@ export const TipHistory: React.FC<TipHistoryProps> = ({ walletAddress }) => {
                       <p className="font-medium text-primary">
                         {tx.sender.slice(0, 8)}...{tx.sender.slice(-6)}
                       </p>
-                      <p className="text-xs text-muted">
-                        {indexerManager.formatTimestamp(tx.timestamp)}
-                      </p>
+                      <p className="text-xs text-muted">{indexerManager.formatTimestamp(tx.timestamp)}</p>
                     </div>
                   </div>
-                  
+
                   {tx.note && (
                     <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 mb-2 backdrop-blur-sm">
                       <p className="text-sm text-emerald-300 italic">"{tx.note}"</p>
                     </div>
                   )}
                 </div>
-                
+
                 <div className="text-right ml-4">
                   <div className="flex items-center space-x-2">
                     <span className="font-bold text-emerald-400">
@@ -129,7 +124,7 @@ export const TipHistory: React.FC<TipHistoryProps> = ({ walletAddress }) => {
               </div>
             </div>
           ))}
-          
+
           {tipHistory.totalTransactions > 10 && (
             <div className="text-center pt-4">
               <p className="text-sm text-muted">
