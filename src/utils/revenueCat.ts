@@ -28,13 +28,14 @@ class RevenueCatManager {
 
   /**
    * Initialize RevenueCat with the connected wallet address as user ID
+   * @param walletAddress - The wallet address to use as user ID
    */
   async configure(walletAddress: string): Promise<void> {
-    try {
-      if (this.isConfigured && this.currentCustomerId === walletAddress) {
-        return; // Already configured for this user
-      }
+    if (this.isConfigured && this.currentCustomerId === walletAddress) {
+      return; // Already configured for this user
+    }
 
+    try {
       await Purchases.configure({
         apiKey: import.meta.env.VITE_REVENUECAT_PUBLIC_API_KEY || '',
         appUserID: walletAddress
@@ -42,7 +43,6 @@ class RevenueCatManager {
 
       this.isConfigured = true;
       this.currentCustomerId = walletAddress;
-      
       console.log('RevenueCat configured for user:', walletAddress);
     } catch (error) {
       console.error('Failed to configure RevenueCat:', error);
@@ -51,21 +51,20 @@ class RevenueCatManager {
   }
 
   /**
-   * Get available subscription offerings
+   * Get available subscription offerings from RevenueCat
+   * @returns Array of subscription tiers
    */
   async getOfferings(): Promise<SubscriptionTier[]> {
-    try {
-      if (!this.isConfigured) {
-        throw new Error('RevenueCat not configured');
-      }
+    if (!this.isConfigured) {
+      throw new Error('RevenueCat not configured');
+    }
 
+    try {
       const offerings = await Purchases.getOfferings();
       const currentOffering = offerings.current;
-
       if (!currentOffering) {
         return this.getDefaultTiers();
       }
-
       return this.mapOfferingToTiers(currentOffering);
     } catch (error) {
       console.error('Failed to get offerings:', error);
@@ -74,14 +73,15 @@ class RevenueCatManager {
   }
 
   /**
-   * Get current subscription status
+   * Get current subscription status of configured user
+   * @returns SubscriptionStatus object
    */
   async getSubscriptionStatus(): Promise<SubscriptionStatus> {
-    try {
-      if (!this.isConfigured) {
-        return { isActive: false, tier: 'free' };
-      }
+    if (!this.isConfigured) {
+      return { isActive: false, tier: 'free' };
+    }
 
+    try {
       const customerInfo = await Purchases.getCustomerInfo();
       return this.parseCustomerInfo(customerInfo);
     } catch (error) {
@@ -91,80 +91,69 @@ class RevenueCatManager {
   }
 
   /**
-   * Purchase a subscription package
+   * Purchase a subscription package by packageId
+   * @param packageId - RevenueCat package identifier
+   * @returns Success status and optional error message
    */
   async purchasePackage(packageId: string): Promise<{ success: boolean; error?: string }> {
-    try {
-      if (!this.isConfigured) {
-        throw new Error('RevenueCat not configured');
-      }
+    if (!this.isConfigured) {
+      return { success: false, error: 'RevenueCat not configured' };
+    }
 
+    try {
       const offerings = await Purchases.getOfferings();
       const currentOffering = offerings.current;
-
       if (!currentOffering) {
         throw new Error('No subscription packages available');
       }
 
-      const packageToPurchase = currentOffering.availablePackages.find(
-        pkg => pkg.identifier === packageId
-      );
-
+      const packageToPurchase = currentOffering.availablePackages.find(pkg => pkg.identifier === packageId);
       if (!packageToPurchase) {
         throw new Error('Subscription package not found');
       }
 
       const { customerInfo } = await Purchases.purchasePackage(packageToPurchase);
-      
-      // Update subscription status in Supabase
       await this.syncSubscriptionToSupabase(customerInfo);
 
       return { success: true };
     } catch (error) {
       console.error('Purchase failed:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Purchase failed' 
-      };
+      return { success: false, error: error instanceof Error ? error.message : 'Purchase failed' };
     }
   }
 
   /**
-   * Restore previous purchases
+   * Restore previous purchases for current user
+   * @returns Success status and optional error message
    */
   async restorePurchases(): Promise<{ success: boolean; error?: string }> {
+    if (!this.isConfigured) {
+      return { success: false, error: 'RevenueCat not configured' };
+    }
+
     try {
-      if (!this.isConfigured) {
-        throw new Error('RevenueCat not configured');
-      }
-
       const customerInfo = await Purchases.restorePurchases();
-      
-      // Update subscription status in Supabase
       await this.syncSubscriptionToSupabase(customerInfo);
-
       return { success: true };
     } catch (error) {
       console.error('Restore failed:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Restore failed' 
-      };
+      return { success: false, error: error instanceof Error ? error.message : 'Restore failed' };
     }
   }
 
   /**
-   * Check if user has specific entitlement
+   * Check if user has specific entitlement active
+   * @param entitlementId - Entitlement identifier
+   * @returns Boolean indicating active entitlement status
    */
   async hasEntitlement(entitlementId: string): Promise<boolean> {
-    try {
-      if (!this.isConfigured) {
-        return false;
-      }
+    if (!this.isConfigured) {
+      return false;
+    }
 
+    try {
       const customerInfo = await Purchases.getCustomerInfo();
       const entitlement = customerInfo.entitlements.active[entitlementId];
-      
       return entitlement?.isActive === true;
     } catch (error) {
       console.error('Failed to check entitlement:', error);
@@ -173,14 +162,14 @@ class RevenueCatManager {
   }
 
   /**
-   * Sync subscription status to Supabase
+   * Sync RevenueCat subscription status to Supabase backend
+   * @param customerInfo - RevenueCat customer info object
    */
   private async syncSubscriptionToSupabase(customerInfo: CustomerInfo): Promise<void> {
-    try {
-      if (!this.currentCustomerId) return;
+    if (!this.currentCustomerId) return;
 
+    try {
       const status = this.parseCustomerInfo(customerInfo);
-      
       await supabaseManager.updateCreatorSubscription(this.currentCustomerId, {
         tier: status.tier,
         status: status.isActive ? 'active' : 'expired',
@@ -193,27 +182,33 @@ class RevenueCatManager {
   }
 
   /**
-   * Parse RevenueCat customer info to our subscription status format
+   * Parse RevenueCat customer info into SubscriptionStatus format
+   * @param customerInfo - RevenueCat CustomerInfo object
+   * @returns Parsed SubscriptionStatus
    */
   private parseCustomerInfo(customerInfo: CustomerInfo): SubscriptionStatus {
     const activeEntitlements = customerInfo.entitlements.active;
-    
-    // Check for Creator Plus subscription
+
+    const parseDate = (dateStr?: string): Date | undefined => {
+      if (!dateStr) return undefined;
+      const d = new Date(dateStr);
+      return isNaN(d.getTime()) ? undefined : d;
+    };
+
     if (activeEntitlements['creator_plus']?.isActive) {
       return {
         isActive: true,
         tier: 'creator_plus',
-        expiresAt: new Date(activeEntitlements['creator_plus'].expirationDate || ''),
+        expiresAt: parseDate(activeEntitlements['creator_plus'].expirationDate),
         customerId: customerInfo.originalAppUserId
       };
     }
-    
-    // Check for Pro subscription
+
     if (activeEntitlements['pro']?.isActive) {
       return {
         isActive: true,
         tier: 'pro',
-        expiresAt: new Date(activeEntitlements['pro'].expirationDate || ''),
+        expiresAt: parseDate(activeEntitlements['pro'].expirationDate),
         customerId: customerInfo.originalAppUserId
       };
     }
@@ -226,7 +221,9 @@ class RevenueCatManager {
   }
 
   /**
-   * Map RevenueCat offering to our subscription tiers
+   * Map RevenueCat offering to internal SubscriptionTier array
+   * @param offering - RevenueCat PurchasesOffering
+   * @returns SubscriptionTier[]
    */
   private mapOfferingToTiers(offering: PurchasesOffering): SubscriptionTier[] {
     const tiers: SubscriptionTier[] = [];
@@ -269,6 +266,7 @@ class RevenueCatManager {
 
   /**
    * Default subscription tiers when RevenueCat is unavailable
+   * @returns Default SubscriptionTier[]
    */
   private getDefaultTiers(): SubscriptionTier[] {
     return [
@@ -304,6 +302,8 @@ class RevenueCatManager {
 
   /**
    * Get subscription features for a specific tier
+   * @param tier - Tier name
+   * @returns List of features
    */
   getFeaturesByTier(tier: 'free' | 'pro' | 'creator_plus'): string[] {
     const features = {
