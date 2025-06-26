@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react'; 
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   User, 
@@ -56,6 +56,19 @@ export const CreatorProfile: React.FC = () => {
   const [tipStats, setTipStats] = useState({ total: 0, count: 0, premiumCount: 0 });
   const [lastTip, setLastTip] = useState<{ txId: string; amount: number } | null>(null);
 
+  const applyCustomBranding = useCallback(() => {
+    if (!creator?.branding_enabled) return;
+
+    brandingManager.applyBrandingToDOM({
+      customPrimaryColor: creator.custom_primary_color,
+      customSecondaryColor: creator.custom_secondary_color,
+      customLogoUrl: creator.custom_logo_url,
+      customFont: creator.custom_font || 'Inter',
+      brandName: creator.brand_name,
+      brandingEnabled: creator.branding_enabled
+    });
+  }, [creator]);
+
   useEffect(() => {
     if (walletAddress) {
       loadCreatorProfile();
@@ -66,12 +79,10 @@ export const CreatorProfile: React.FC = () => {
     if (creator?.branding_enabled) {
       applyCustomBranding();
     }
-    
     return () => {
-      // Reset branding when component unmounts
       brandingManager.resetBrandingToDefault();
     };
-  }, [creator]);
+  }, [creator, applyCustomBranding]);
 
   const loadCreatorProfile = async () => {
     if (!walletAddress) {
@@ -84,24 +95,16 @@ export const CreatorProfile: React.FC = () => {
     setError(null);
 
     try {
-      // Load creator from Supabase
       const creatorData = await supabaseManager.getCreatorByWallet(walletAddress);
-      
       if (!creatorData) {
         setError('Creator profile not found');
         setLoading(false);
         return;
       }
 
-      // Check Pro status
       const isProStatus = await checkProStatus(walletAddress);
-      
-      setCreator({
-        ...creatorData,
-        is_pro: isProStatus
-      });
+      setCreator({ ...creatorData, is_pro: isProStatus });
 
-      // Load tip statistics
       const stats = await supabaseManager.getTotalTips(walletAddress);
       setTipStats(stats);
 
@@ -113,29 +116,11 @@ export const CreatorProfile: React.FC = () => {
     }
   };
 
-  const applyCustomBranding = () => {
-    if (!creator?.branding_enabled) return;
-
-    const branding = {
-      customPrimaryColor: creator.custom_primary_color,
-      customSecondaryColor: creator.custom_secondary_color,
-      customLogoUrl: creator.custom_logo_url,
-      customFont: creator.custom_font || 'Inter',
-      brandName: creator.brand_name,
-      brandingEnabled: creator.branding_enabled
-    };
-
-    brandingManager.applyBrandingToDOM(branding);
-  };
-
-  const getProfileUrl = () => {
-    return window.location.href;
-  };
+  const getProfileUrl = () => window.location.href;
 
   const handleCopyUrl = async () => {
     try {
-      const url = getProfileUrl();
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(getProfileUrl());
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
@@ -151,8 +136,7 @@ export const CreatorProfile: React.FC = () => {
     if (navigator.share) {
       try {
         await navigator.share({ title, text, url });
-      } catch (error) {
-        console.error('Share failed:', error);
+      } catch {
         handleCopyUrl();
       }
     } else {
@@ -162,7 +146,6 @@ export const CreatorProfile: React.FC = () => {
 
   const handleTipSuccess = (txId: string, amount: number) => {
     setLastTip({ txId, amount });
-    // Refresh tip stats
     if (walletAddress) {
       supabaseManager.getTotalTips(walletAddress).then(setTipStats);
     }
@@ -183,9 +166,8 @@ export const CreatorProfile: React.FC = () => {
     };
   };
 
-  const formatWalletAddress = (address: string) => {
-    return `${address.slice(0, 8)}...${address.slice(-8)}`;
-  };
+  const formatWalletAddress = (address: string) =>
+    `${address.slice(0, 8)}...${address.slice(-8)}`;
 
   if (loading) {
     return (
@@ -205,10 +187,7 @@ export const CreatorProfile: React.FC = () => {
           <AlertTriangle className="w-16 h-16 text-red-400 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-primary mb-2">Creator Not Found</h1>
           <p className="text-secondary mb-4">{error}</p>
-          <button
-            onClick={() => navigate('/')}
-            className="btn-primary px-6 py-2"
-          >
+          <button onClick={() => navigate('/')} className="btn-primary px-6 py-2">
             Go Home
           </button>
         </div>
@@ -222,21 +201,20 @@ export const CreatorProfile: React.FC = () => {
   const profileUrl = getProfileUrl();
 
   return (
-    <div 
+    <div
       className="min-h-screen p-4"
       style={{
-        background: creator.branding_enabled 
+        background: creator.branding_enabled
           ? `linear-gradient(135deg, ${brandColors.primary}10, ${brandColors.secondary}10)`
           : 'linear-gradient(135deg, #10b98110, #14b8a610)',
         fontFamily: brandColors.font
       }}
     >
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/20 via-slate-900 to-slate-900"></div>
-      
       <div className="max-w-2xl mx-auto relative z-10">
         <div className="grid gap-6">
           {/* Header */}
-          <div 
+          <div
             className={`glass-card p-6 sm:p-8 ${
               creator.is_pro ? 'border-4 border-yellow-400/30 shadow-2xl animate-pulse' : ''
             }`}
@@ -245,8 +223,8 @@ export const CreatorProfile: React.FC = () => {
               <div className="flex justify-center mb-4">
                 <QuickKashLogo size="medium" />
               </div>
-              
-              {/* Pro Creator Badge */}
+
+              {/* Pro Badge */}
               {creator.is_pro && (
                 <div className="mb-4">
                   <div className="inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-yellow-400/20 to-yellow-500/20 border border-yellow-400/40 rounded-full text-yellow-300 font-semibold text-sm animate-pulse">
@@ -256,8 +234,8 @@ export const CreatorProfile: React.FC = () => {
                   </div>
                 </div>
               )}
-              
-              {/* Creator Avatar/Logo */}
+
+              {/* Avatar or Logo */}
               <div className="relative mb-6">
                 {logoUrl ? (
                   <img
@@ -268,45 +246,36 @@ export const CreatorProfile: React.FC = () => {
                     }`}
                   />
                 ) : (
-                  <div 
+                  <div
                     className={`w-24 h-24 rounded-2xl flex items-center justify-center mx-auto shadow-lg ${
                       creator.is_pro ? 'ring-4 ring-yellow-400/50' : ''
                     }`}
-                    style={{ 
+                    style={{
                       background: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.secondary})`
                     }}
                   >
                     <User className="w-12 h-12 text-white" />
                   </div>
                 )}
-                
                 {creator.is_pro && (
                   <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center animate-bounce">
                     <Star className="w-4 h-4 text-yellow-900" />
                   </div>
                 )}
               </div>
-              
-              {/* Creator Info */}
-              <h1 
-                className="text-2xl font-bold mb-2"
-                style={{ color: brandColors.primary }}
-              >
+
+              {/* Name & Bio */}
+              <h1 className="text-2xl font-bold mb-2" style={{ color: brandColors.primary }}>
                 {displayName}
               </h1>
-              
-              {creator.bio && (
-                <p className="text-secondary leading-relaxed mb-4">
-                  {creator.bio}
-                </p>
-              )}
-              
+              {creator.bio && <p className="text-secondary leading-relaxed mb-4">{creator.bio}</p>}
+
               {/* Wallet Address */}
               <div className="flex items-center justify-center space-x-2 text-sm text-muted mb-4">
                 <MapPin className="w-4 h-4" />
                 <span>{formatWalletAddress(walletAddress!)}</span>
               </div>
-              
+
               {/* Member Since */}
               <div className="flex items-center justify-center space-x-2 text-sm text-muted mb-6">
                 <Calendar className="w-4 h-4" />
@@ -316,28 +285,19 @@ export const CreatorProfile: React.FC = () => {
               {/* Stats */}
               <div className="grid grid-cols-3 gap-4 mb-6">
                 <div className="text-center">
-                  <div 
-                    className="text-2xl font-bold"
-                    style={{ color: brandColors.primary }}
-                  >
+                  <div className="text-2xl font-bold" style={{ color: brandColors.primary }}>
                     {tipStats.total.toFixed(2)}
                   </div>
                   <div className="text-xs text-muted">ALGO Received</div>
                 </div>
                 <div className="text-center">
-                  <div 
-                    className="text-2xl font-bold"
-                    style={{ color: brandColors.primary }}
-                  >
+                  <div className="text-2xl font-bold" style={{ color: brandColors.primary }}>
                     {tipStats.count}
                   </div>
                   <div className="text-xs text-muted">Total Tips</div>
                 </div>
                 <div className="text-center">
-                  <div 
-                    className="text-2xl font-bold"
-                    style={{ color: brandColors.primary }}
-                  >
+                  <div className="text-2xl font-bold" style={{ color: brandColors.primary }}>
                     {tipStats.premiumCount}
                   </div>
                   <div className="text-xs text-muted">Premium Unlocks</div>
@@ -354,18 +314,14 @@ export const CreatorProfile: React.FC = () => {
                     <Share2 className="w-4 h-4" />
                     <span>Share Profile</span>
                   </button>
-                  
                   <button
                     onClick={handleCopyUrl}
                     className={`flex items-center justify-center px-4 py-2 rounded-xl transition-colors ${
-                      copied 
-                        ? 'bg-emerald-500 text-white' 
-                        : 'bg-slate-700/50 hover:bg-slate-600/50 text-slate-300'
+                      copied ? 'bg-emerald-500 text-white' : 'bg-slate-700/50 hover:bg-slate-600/50 text-slate-300'
                     }`}
                   >
                     {copied ? <Star className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                   </button>
-
                   <button
                     onClick={() => setShowQRCode(!showQRCode)}
                     className="flex items-center justify-center px-4 py-2 bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 rounded-xl transition-colors"
@@ -387,7 +343,7 @@ export const CreatorProfile: React.FC = () => {
               </div>
 
               {/* Premium Content Info */}
-              <div 
+              <div
                 className="rounded-xl p-4 mb-6 backdrop-blur-sm"
                 style={{
                   background: `${brandColors.primary}10`,
@@ -418,7 +374,7 @@ export const CreatorProfile: React.FC = () => {
 
             {/* Last Tip Success */}
             {lastTip && (
-              <div 
+              <div
                 className="mt-4 p-4 rounded-xl backdrop-blur-sm"
                 style={{
                   background: `${brandColors.primary}10`,
@@ -489,19 +445,17 @@ export const CreatorProfile: React.FC = () => {
 
           {/* Premium Content */}
           {showPremiumContent && (
-           <PremiumContentViewer 
-  creatorAddress={walletAddress!}
-  hasAccess={tipStats.total >= 10}
-/>
-
+            <PremiumContentViewer
+              creatorAddress={walletAddress!}
+              hasAccess={tipStats.total >= 10}
+            />
           )}
 
           {/* Tip History */}
-          {showHistory && (
-            <TipHistory walletAddress={walletAddress!} />
-          )}
+          {showHistory && <TipHistory walletAddress={walletAddress!} />}
         </div>
       </div>
     </div>
   );
 };
+
