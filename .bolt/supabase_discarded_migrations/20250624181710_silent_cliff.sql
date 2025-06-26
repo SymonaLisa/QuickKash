@@ -30,9 +30,9 @@ CREATE TABLE IF NOT EXISTS shortlinks (
   click_count integer DEFAULT 0
 );
 
--- Add constraints
-ALTER TABLE shortlinks ADD CONSTRAINT valid_slug 
-  CHECK (slug ~ '^[a-zA-Z0-9_-]{3,20}$');
+-- Add slug format constraint (3 to 20 characters, alphanumeric, underscore, dash)
+ALTER TABLE shortlinks
+  ADD CONSTRAINT valid_slug CHECK (slug ~ '^[a-zA-Z0-9_-]{3,20}$');
 
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_shortlinks_wallet_address ON shortlinks(wallet_address);
@@ -41,21 +41,21 @@ CREATE INDEX IF NOT EXISTS idx_shortlinks_active ON shortlinks(is_active) WHERE 
 -- Enable Row Level Security
 ALTER TABLE shortlinks ENABLE ROW LEVEL SECURITY;
 
--- Policy: Anyone can read active shortlinks (needed for redirect functionality)
+-- Policy: Anyone can read active shortlinks (for redirects)
 CREATE POLICY "Anyone can read active shortlinks"
   ON shortlinks
   FOR SELECT
   TO public
   USING (is_active = true);
 
--- Policy: Creators can view all their own shortlinks
+-- Policy: Creators can view their own shortlinks
 CREATE POLICY "Creators can view own shortlinks"
   ON shortlinks
   FOR SELECT
   TO public
   USING (wallet_address::text = current_setting('request.jwt.claims', true)::json->>'sub');
 
--- Policy: Creators can create shortlinks for themselves
+-- Policy: Creators can create their own shortlinks
 CREATE POLICY "Creators can create own shortlinks"
   ON shortlinks
   FOR INSERT
@@ -84,8 +84,8 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
-  UPDATE shortlinks 
-  SET click_count = click_count + 1 
+  UPDATE shortlinks
+  SET click_count = click_count + 1
   WHERE slug = shortlink_slug AND is_active = true;
 END;
 $$;
