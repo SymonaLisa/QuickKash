@@ -31,7 +31,7 @@ export const TipButton: React.FC<TipButtonProps> = ({
   onTipError,
   className = '',
   showAmountInput = true,
-  fixedAmount
+  fixedAmount,
 }) => {
   const [status, setStatus] = useState<string | null>(null);
   const [amount, setAmount] = useState<number>(fixedAmount || defaultAmount);
@@ -39,17 +39,17 @@ export const TipButton: React.FC<TipButtonProps> = ({
   const [txId, setTxId] = useState<string | null>(null);
   const [connectedWallet, setConnectedWallet] = useState<string | null>(null);
 
-  const finalAmount = fixedAmount || amount;
+  const finalAmount = fixedAmount ?? amount;
 
   const calculateFees = (tipAmount: number) => {
     const microAlgoAmount = algosdk.algosToMicroalgos(tipAmount);
     const devFee = Math.floor(microAlgoAmount * 0.02);
     const creatorAmount = microAlgoAmount - devFee;
-    
+
     return {
       total: tipAmount,
       creator: algosdk.microalgosToAlgos(creatorAmount),
-      platform: algosdk.microalgosToAlgos(devFee)
+      platform: algosdk.microalgosToAlgos(devFee),
     };
   };
 
@@ -59,16 +59,12 @@ export const TipButton: React.FC<TipButtonProps> = ({
     setTxId(null);
 
     try {
-      // Connect Pera Wallet
       const sender = await connectPera();
-      if (!sender) {
-        throw new Error('Wallet connection failed');
-      }
+      if (!sender) throw new Error('Wallet connection failed');
 
       setConnectedWallet(sender);
       setStatus('Sending transaction...');
 
-      // Send grouped transaction with dev fee
       const transactionId = await signAndSendTip({
         sender,
         recipient: creatorWallet,
@@ -80,35 +76,20 @@ export const TipButton: React.FC<TipButtonProps> = ({
       setTxId(transactionId);
       setStatus('Logging to Supabase...');
 
-      // Log tip to Supabase
-      await supabaseManager.recordTip(
-        sender,
-        creatorWallet,
-        finalAmount,
-        transactionId,
-        `Tip to ${creatorName}`
-      );
+      await supabaseManager.recordTip(sender, creatorWallet, finalAmount, transactionId, `Tip to ${creatorName}`);
 
-      // Check if premium content is unlocked
       if (finalAmount >= 10) {
         setStatus('Thank you! Premium content unlocked! 🎉');
       } else {
         setStatus('Thanks for your support! 💚');
       }
 
-      // Call success callback
-      if (onTipSuccess) {
-        onTipSuccess(transactionId, finalAmount);
-      }
-
+      onTipSuccess?.(transactionId, finalAmount);
     } catch (err: any) {
       console.error('Tip failed:', err);
       const errorMessage = err?.message || 'Error sending tip';
       setStatus(`Error: ${errorMessage}`);
-      
-      if (onTipError) {
-        onTipError(errorMessage);
-      }
+      onTipError?.(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -119,11 +100,9 @@ export const TipButton: React.FC<TipButtonProps> = ({
   return (
     <div className={`space-y-4 ${className}`}>
       {/* Amount Input */}
-      {showAmountInput && !fixedAmount && (
+      {showAmountInput && fixedAmount === undefined && (
         <div>
-          <label className="block text-sm font-medium text-secondary mb-2">
-            Tip Amount (ALGO)
-          </label>
+          <label className="block text-sm font-medium text-secondary mb-2">Tip Amount (ALGO)</label>
           <input
             type="number"
             value={amount}
@@ -160,7 +139,7 @@ export const TipButton: React.FC<TipButtonProps> = ({
               </div>
             </div>
           </div>
-          
+
           {finalAmount >= 10 && (
             <div className="mt-2 p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
               <div className="flex items-center space-x-1 text-emerald-300 text-xs font-medium">
@@ -186,6 +165,7 @@ export const TipButton: React.FC<TipButtonProps> = ({
         onClick={handleTip}
         disabled={isLoading || finalAmount <= 0}
         className="w-full flex items-center justify-center space-x-2 py-3 btn-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+        aria-label={`Tip ${finalAmount.toFixed(2)} ALGO with Pera Wallet`}
       >
         {isLoading ? (
           <>
@@ -196,7 +176,7 @@ export const TipButton: React.FC<TipButtonProps> = ({
           <>
             <Wallet className="w-5 h-5" />
             <span>
-              Tip {finalAmount} ALGO with Pera Wallet
+              Tip {finalAmount.toFixed(2)} ALGO with Pera Wallet
               {finalAmount >= 10 ? ' ⭐' : ' 💸'}
             </span>
           </>
@@ -205,13 +185,17 @@ export const TipButton: React.FC<TipButtonProps> = ({
 
       {/* Status Messages */}
       {status && (
-        <div className={`p-3 rounded-xl text-sm font-medium ${
-          status.includes('Error') 
-            ? 'bg-red-500/10 border border-red-500/20 text-red-300'
-            : status.includes('Thank you') || status.includes('Thanks')
-            ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-300'
-            : 'bg-blue-500/10 border border-blue-500/20 text-blue-300'
-        }`}>
+        <div
+          className={`p-3 rounded-xl text-sm font-medium ${
+            status.includes('Error')
+              ? 'bg-red-500/10 border border-red-500/20 text-red-300'
+              : status.includes('Thank you') || status.includes('Thanks')
+              ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-300'
+              : 'bg-blue-500/10 border border-blue-500/20 text-blue-300'
+          }`}
+          role="alert"
+          aria-live="polite"
+        >
           <div className="flex items-start space-x-2">
             {status.includes('Error') ? (
               <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
@@ -243,9 +227,7 @@ export const TipButton: React.FC<TipButtonProps> = ({
 
       {/* Platform Fee Notice */}
       <div className="text-center">
-        <p className="text-xs text-muted">
-          2% platform fee supports QuickKash development
-        </p>
+        <p className="text-xs text-muted">2% platform fee supports QuickKash development</p>
       </div>
     </div>
   );
