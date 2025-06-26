@@ -1,9 +1,9 @@
 import { PeraWalletConnect } from '@perawallet/connect';
 import MyAlgoConnect from '@randlabs/myalgo-connect';
 import algosdk from 'algosdk';
-import { Buffer } from 'buffer';  // <-- Added for browser Buffer support
+import { Buffer } from 'buffer';  // Added for browser Buffer support
 
-// Polyfill Buffer globally for browser environment (optional, but required if Buffer errors)
+// Polyfill Buffer globally for browser (if needed)
 if (typeof window !== 'undefined' && !(window as any).Buffer) {
   (window as any).Buffer = Buffer;
 }
@@ -19,26 +19,17 @@ class WalletManager {
   private algodClient: algosdk.Algodv2;
 
   constructor() {
-    this.peraWallet = new PeraWalletConnect({
-      shouldShowSignTxnToast: false,
-    });
-
+    this.peraWallet = new PeraWalletConnect({ shouldShowSignTxnToast: false });
     this.myAlgoWallet = new MyAlgoConnect();
 
-    // Initialize Algod client
     const algodToken = import.meta.env.VITE_ALGOD_TOKEN || '98D9CE80660AD243893D56D9F125CD2D';
-    this.algodClient = new algosdk.Algodv2(
-      algodToken,
-      'https://mainnet-api.4160.nodely.io',
-      ''
-    );
+    this.algodClient = new algosdk.Algodv2(algodToken, 'https://mainnet-api.4160.nodely.io', '');
   }
 
   async connectPera(): Promise<WalletConnection> {
     try {
       const accounts = await this.peraWallet.connect();
       if (accounts.length === 0) throw new Error('No accounts found');
-
       return { address: accounts[0], provider: 'Pera Wallet' };
     } catch (error: any) {
       console.error('Pera wallet connection failed:', error);
@@ -50,21 +41,15 @@ class WalletManager {
     try {
       const accounts = await this.myAlgoWallet.connect();
       if (accounts.length === 0) throw new Error('No accounts found in MyAlgo Wallet');
-
       return { address: accounts[0].address, provider: 'MyAlgo Wallet' };
     } catch (error: any) {
       console.error('MyAlgo wallet connection failed:', error);
-
       if (error instanceof Error) {
-        if (error.message.includes('User rejected')) {
-          throw new Error('Connection cancelled by user');
-        } else if (error.message.includes('not available')) {
+        if (error.message.includes('User rejected')) throw new Error('Connection cancelled by user');
+        if (error.message.includes('not available'))
           throw new Error('MyAlgo Wallet is not available. Check your internet connection and try again.');
-        } else {
-          throw new Error(`MyAlgo connection failed: ${error.message}`);
-        }
+        throw new Error(`MyAlgo connection failed: ${error.message}`);
       }
-
       throw new Error('Failed to connect to MyAlgo Wallet. Please try again or use Pera Wallet instead.');
     }
   }
@@ -114,7 +99,7 @@ export const signAndSendTip = async ({
   sender,
   recipient,
   amountAlgo,
-  devFeeAddress = 'YOUR_REAL_QUICKKASH_DEV_WALLET_ADDRESS_HERE', // <-- Replace with your real address
+  devFeeAddress = 'YOUR_REAL_QUICKKASH_DEV_WALLET_ADDRESS_HERE', // <-- Replace with your real dev wallet address
   algodClient,
 }: {
   sender: string;
@@ -172,7 +157,7 @@ export const signAndSendTipWithWallet = async ({
   sender,
   recipient,
   amountAlgo,
-  devFeeAddress = 'YOUR_REAL_QUICKKASH_DEV_WALLET_ADDRESS_HERE', // <-- Replace with your real address
+  devFeeAddress = 'YOUR_REAL_QUICKKASH_DEV_WALLET_ADDRESS_HERE', // <-- Replace with your real dev wallet address
   walletType = 'pera',
   algodClient,
   note,
