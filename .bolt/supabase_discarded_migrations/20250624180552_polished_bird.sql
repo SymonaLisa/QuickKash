@@ -4,7 +4,7 @@
   1. New Tables
     - `shortlinks`
       - `slug` (text, primary key) - The custom short URL slug (e.g., "alice", "bob")
-      - `wallet_address` (text, not null) - The creator's wallet address
+      - `wallet_address` (uuid, not null) - The creator's wallet address (matches `creators.id`)
       - `created_at` (timestamp) - When the shortlink was created
       - `is_active` (boolean) - Whether the shortlink is active
       - `click_count` (integer) - Number of times the shortlink has been used
@@ -12,7 +12,7 @@
   2. Security
     - Enable RLS on `shortlinks` table
     - Add policy for public read access to active shortlinks
-    - Add policy for creators to manage their own shortlinks
+    - Add policy for authenticated creators to manage their own shortlinks
 
   3. Constraints
     - Unique slug constraint
@@ -23,7 +23,7 @@
 -- Create shortlinks table
 CREATE TABLE IF NOT EXISTS shortlinks (
   slug text PRIMARY KEY,
-  wallet_address text NOT NULL,
+  wallet_address uuid NOT NULL,
   created_at timestamptz DEFAULT now(),
   is_active boolean DEFAULT true,
   click_count integer DEFAULT 0,
@@ -34,47 +34,47 @@ CREATE TABLE IF NOT EXISTS shortlinks (
 -- Enable RLS
 ALTER TABLE shortlinks ENABLE ROW LEVEL SECURITY;
 
--- Create index for faster lookups
+-- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_shortlinks_wallet_address ON shortlinks(wallet_address);
 CREATE INDEX IF NOT EXISTS idx_shortlinks_active ON shortlinks(is_active) WHERE is_active = true;
 
 -- RLS Policies
 
--- Allow public read access to active shortlinks
+-- Allow public read access to active shortlinks (e.g., for redirects)
 CREATE POLICY "Public can read active shortlinks"
   ON shortlinks
   FOR SELECT
   TO public
   USING (is_active = true);
 
--- Allow creators to view their own shortlinks
+-- Allow authenticated users to view their own shortlinks
 CREATE POLICY "Creators can view own shortlinks"
   ON shortlinks
   FOR SELECT
-  TO public
-  USING (true);
+  TO authenticated
+  USING (wallet_address = auth.uid());
 
--- Allow creators to create shortlinks for themselves
+-- Allow authenticated users to create shortlinks for themselves
 CREATE POLICY "Creators can create own shortlinks"
   ON shortlinks
   FOR INSERT
-  TO public
-  WITH CHECK (true);
+  TO authenticated
+  WITH CHECK (wallet_address = auth.uid());
 
--- Allow creators to update their own shortlinks
+-- Allow authenticated users to update their own shortlinks
 CREATE POLICY "Creators can update own shortlinks"
   ON shortlinks
   FOR UPDATE
-  TO public
-  USING (true)
-  WITH CHECK (true);
+  TO authenticated
+  USING (wallet_address = auth.uid())
+  WITH CHECK (wallet_address = auth.uid());
 
--- Allow creators to delete their own shortlinks
+-- Allow authenticated users to delete their own shortlinks
 CREATE POLICY "Creators can delete own shortlinks"
   ON shortlinks
   FOR DELETE
-  TO public
-  USING (true);
+  TO authenticated
+  USING (wallet_address = auth.uid());
 
 -- Create function to increment click count
 CREATE OR REPLACE FUNCTION increment_shortlink_clicks(shortlink_slug text)
@@ -89,5 +89,5 @@ BEGIN
 END;
 $$;
 
--- Grant execute permission on the function
+-- Grant public execute permission on the function
 GRANT EXECUTE ON FUNCTION increment_shortlink_clicks(text) TO public;
