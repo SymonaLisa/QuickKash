@@ -1,9 +1,4 @@
-import Purchases, { 
-  CustomerInfo, 
-  PurchasesOffering, 
-  PurchasesPackage,
-  PurchasesEntitlementInfo 
-} from '@revenuecat/purchases-js';
+import { Purchases, CustomerInfo, PurchasesOffering, PurchasesPackage, PurchasesEntitlementInfo } from '@revenuecat/purchases-js';
 import { supabaseManager } from './supabase';
 
 export interface SubscriptionTier {
@@ -25,20 +20,17 @@ export interface SubscriptionStatus {
 class RevenueCatManager {
   private isConfigured = false;
   private currentCustomerId: string | null = null;
+  private purchases: Purchases | null = null;
 
-  /**
-   * Initialize RevenueCat with the connected wallet address as user ID
-   * @param walletAddress - The wallet address to use as user ID
-   */
   async configure(walletAddress: string): Promise<void> {
     if (this.isConfigured && this.currentCustomerId === walletAddress) {
-      return; // Already configured for this user
+      return; // Already configured
     }
 
     try {
-      await Purchases.configure({
+      this.purchases = await Purchases.configure({
         apiKey: import.meta.env.VITE_REVENUECAT_PUBLIC_API_KEY || '',
-        appUserID: walletAddress
+        appUserID: walletAddress,
       });
 
       this.isConfigured = true;
@@ -50,17 +42,13 @@ class RevenueCatManager {
     }
   }
 
-  /**
-   * Get available subscription offerings from RevenueCat
-   * @returns Array of subscription tiers
-   */
   async getOfferings(): Promise<SubscriptionTier[]> {
-    if (!this.isConfigured) {
+    if (!this.purchases) {
       throw new Error('RevenueCat not configured');
     }
 
     try {
-      const offerings = await Purchases.getOfferings();
+      const offerings = await this.purchases.getOfferings();
       const currentOffering = offerings.current;
       if (!currentOffering) {
         return this.getDefaultTiers();
@@ -72,17 +60,13 @@ class RevenueCatManager {
     }
   }
 
-  /**
-   * Get current subscription status of configured user
-   * @returns SubscriptionStatus object
-   */
   async getSubscriptionStatus(): Promise<SubscriptionStatus> {
-    if (!this.isConfigured) {
+    if (!this.purchases) {
       return { isActive: false, tier: 'free' };
     }
 
     try {
-      const customerInfo = await Purchases.getCustomerInfo();
+      const customerInfo = await this.purchases.getCustomerInfo();
       return this.parseCustomerInfo(customerInfo);
     } catch (error) {
       console.error('Failed to get subscription status:', error);
@@ -90,18 +74,13 @@ class RevenueCatManager {
     }
   }
 
-  /**
-   * Purchase a subscription package by packageId
-   * @param packageId - RevenueCat package identifier
-   * @returns Success status and optional error message
-   */
   async purchasePackage(packageId: string): Promise<{ success: boolean; error?: string }> {
-    if (!this.isConfigured) {
+    if (!this.purchases) {
       return { success: false, error: 'RevenueCat not configured' };
     }
 
     try {
-      const offerings = await Purchases.getOfferings();
+      const offerings = await this.purchases.getOfferings();
       const currentOffering = offerings.current;
       if (!currentOffering) {
         throw new Error('No subscription packages available');
@@ -112,7 +91,7 @@ class RevenueCatManager {
         throw new Error('Subscription package not found');
       }
 
-      const { customerInfo } = await Purchases.purchasePackage(packageToPurchase);
+      const { customerInfo } = await this.purchases.purchasePackage(packageToPurchase);
       await this.syncSubscriptionToSupabase(customerInfo);
 
       return { success: true };
@@ -122,17 +101,13 @@ class RevenueCatManager {
     }
   }
 
-  /**
-   * Restore previous purchases for current user
-   * @returns Success status and optional error message
-   */
   async restorePurchases(): Promise<{ success: boolean; error?: string }> {
-    if (!this.isConfigured) {
+    if (!this.purchases) {
       return { success: false, error: 'RevenueCat not configured' };
     }
 
     try {
-      const customerInfo = await Purchases.restorePurchases();
+      const customerInfo = await this.purchases.restorePurchases();
       await this.syncSubscriptionToSupabase(customerInfo);
       return { success: true };
     } catch (error) {
@@ -141,19 +116,14 @@ class RevenueCatManager {
     }
   }
 
-  /**
-   * Check if user has specific entitlement active
-   * @param entitlementId - Entitlement identifier
-   * @returns Boolean indicating active entitlement status
-   */
   async hasEntitlement(entitlementId: string): Promise<boolean> {
-    if (!this.isConfigured) {
+    if (!this.purchases) {
       return false;
     }
 
     try {
-      const customerInfo = await Purchases.getCustomerInfo();
-      const entitlement = customerInfo.entitlements.active[entitlementId];
+      const customerInfo = await this.purchases.getCustomerInfo();
+      const entitlement = customerInfo.entitlements.active?.[entitlementId];
       return entitlement?.isActive === true;
     } catch (error) {
       console.error('Failed to check entitlement:', error);
@@ -161,10 +131,6 @@ class RevenueCatManager {
     }
   }
 
-  /**
-   * Sync RevenueCat subscription status to Supabase backend
-   * @param customerInfo - RevenueCat customer info object
-   */
   private async syncSubscriptionToSupabase(customerInfo: CustomerInfo): Promise<void> {
     if (!this.currentCustomerId) return;
 
@@ -174,20 +140,15 @@ class RevenueCatManager {
         tier: status.tier,
         status: status.isActive ? 'active' : 'expired',
         expiresAt: status.expiresAt,
-        revenueCatCustomerId: customerInfo.originalAppUserId
+        revenueCatCustomerId: customerInfo.originalAppUserId,
       });
     } catch (error) {
       console.error('Failed to sync subscription to Supabase:', error);
     }
   }
 
-  /**
-   * Parse RevenueCat customer info into SubscriptionStatus format
-   * @param customerInfo - RevenueCat CustomerInfo object
-   * @returns Parsed SubscriptionStatus
-   */
   private parseCustomerInfo(customerInfo: CustomerInfo): SubscriptionStatus {
-    const activeEntitlements = customerInfo.entitlements.active;
+    const activeEntitlements = customerInfo.entitlements.active ?? {};
 
     const parseDate = (dateStr?: string): Date | undefined => {
       if (!dateStr) return undefined;
@@ -200,7 +161,7 @@ class RevenueCatManager {
         isActive: true,
         tier: 'creator_plus',
         expiresAt: parseDate(activeEntitlements['creator_plus'].expirationDate),
-        customerId: customerInfo.originalAppUserId
+        customerId: customerInfo.originalAppUserId,
       };
     }
 
@@ -209,22 +170,17 @@ class RevenueCatManager {
         isActive: true,
         tier: 'pro',
         expiresAt: parseDate(activeEntitlements['pro'].expirationDate),
-        customerId: customerInfo.originalAppUserId
+        customerId: customerInfo.originalAppUserId,
       };
     }
 
     return {
       isActive: false,
       tier: 'free',
-      customerId: customerInfo.originalAppUserId
+      customerId: customerInfo.originalAppUserId,
     };
   }
 
-  /**
-   * Map RevenueCat offering to internal SubscriptionTier array
-   * @param offering - RevenueCat PurchasesOffering
-   * @returns SubscriptionTier[]
-   */
   private mapOfferingToTiers(offering: PurchasesOffering): SubscriptionTier[] {
     const tiers: SubscriptionTier[] = [];
 
@@ -238,10 +194,10 @@ class RevenueCatManager {
             'Custom branding',
             'Advanced analytics',
             'Priority support',
-            'Multiple tip jars'
+            'Multiple tip jars',
           ],
           price: pkg.product.priceString,
-          packageId: pkg.identifier
+          packageId: pkg.identifier,
         });
       } else if (pkg.identifier === 'creator_plus_monthly') {
         tiers.push({
@@ -253,10 +209,10 @@ class RevenueCatManager {
             'White-label solution',
             'API access',
             'Custom integrations',
-            'Dedicated support'
+            'Dedicated support',
           ],
           price: pkg.product.priceString,
-          packageId: pkg.identifier
+          packageId: pkg.identifier,
         });
       }
     });
@@ -264,10 +220,6 @@ class RevenueCatManager {
     return tiers;
   }
 
-  /**
-   * Default subscription tiers when RevenueCat is unavailable
-   * @returns Default SubscriptionTier[]
-   */
   private getDefaultTiers(): SubscriptionTier[] {
     return [
       {
@@ -278,10 +230,10 @@ class RevenueCatManager {
           'Custom branding',
           'Advanced analytics',
           'Priority support',
-          'Multiple tip jars'
+          'Multiple tip jars',
         ],
         price: '$9.99/month',
-        packageId: 'pro_monthly'
+        packageId: 'pro_monthly',
       },
       {
         id: 'creator_plus',
@@ -292,40 +244,31 @@ class RevenueCatManager {
           'White-label solution',
           'API access',
           'Custom integrations',
-          'Dedicated support'
+          'Dedicated support',
         ],
         price: '$29.99/month',
-        packageId: 'creator_plus_monthly'
-      }
+        packageId: 'creator_plus_monthly',
+      },
     ];
   }
 
-  /**
-   * Get subscription features for a specific tier
-   * @param tier - Tier name
-   * @returns List of features
-   */
   getFeaturesByTier(tier: 'free' | 'pro' | 'creator_plus'): string[] {
     const features = {
-      free: [
-        'Basic tip jar',
-        'Algorand payments',
-        'Simple analytics'
-      ],
+      free: ['Basic tip jar', 'Algorand payments', 'Simple analytics'],
       pro: [
         'Everything in Free',
         'Custom branding',
         'Advanced analytics',
         'Priority support',
-        'Multiple tip jars'
+        'Multiple tip jars',
       ],
       creator_plus: [
         'Everything in Pro',
         'White-label solution',
         'API access',
         'Custom integrations',
-        'Dedicated support'
-      ]
+        'Dedicated support',
+      ],
     };
 
     return features[tier] || features.free;
