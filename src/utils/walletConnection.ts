@@ -1,6 +1,7 @@
 import { PeraWalletConnect } from '@perawallet/connect';
 import MyAlgoConnect from '@randlabs/myalgo-connect';
 import algosdk from 'algosdk';
+import { Buffer } from 'buffer';  // <-- Added for browser Buffer support
 
 export interface WalletConnection {
   address: string;
@@ -110,7 +111,7 @@ export const signAndSendTip = async ({
   sender,
   recipient,
   amountAlgo,
-  devFeeAddress = 'REPLACE_WITH_YOUR_QUICKKASH_DEV_WALLET_ADDRESS', // Important: replace this
+  devFeeAddress = 'REPLACE_WITH_YOUR_QUICKKASH_DEV_WALLET_ADDRESS', // <-- Replace this
   algodClient,
 }: {
   sender: string;
@@ -168,7 +169,7 @@ export const signAndSendTipWithWallet = async ({
   sender,
   recipient,
   amountAlgo,
-  devFeeAddress = 'REPLACE_WITH_YOUR_QUICKKASH_DEV_WALLET_ADDRESS', // Important: replace this
+  devFeeAddress = 'REPLACE_WITH_YOUR_QUICKKASH_DEV_WALLET_ADDRESS', // <-- Replace this
   walletType = 'pera',
   algodClient,
   note,
