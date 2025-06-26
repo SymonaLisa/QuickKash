@@ -3,6 +3,11 @@ import MyAlgoConnect from '@randlabs/myalgo-connect';
 import algosdk from 'algosdk';
 import { Buffer } from 'buffer';  // <-- Added for browser Buffer support
 
+// Polyfill Buffer globally for browser environment (optional, but required if Buffer errors)
+if (typeof window !== 'undefined' && !(window as any).Buffer) {
+  (window as any).Buffer = Buffer;
+}
+
 export interface WalletConnection {
   address: string;
   provider: string;
@@ -35,7 +40,7 @@ class WalletManager {
       if (accounts.length === 0) throw new Error('No accounts found');
 
       return { address: accounts[0], provider: 'Pera Wallet' };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Pera wallet connection failed:', error);
       throw new Error('Failed to connect to Pera Wallet');
     }
@@ -47,7 +52,7 @@ class WalletManager {
       if (accounts.length === 0) throw new Error('No accounts found in MyAlgo Wallet');
 
       return { address: accounts[0].address, provider: 'MyAlgo Wallet' };
-    } catch (error) {
+    } catch (error: any) {
       console.error('MyAlgo wallet connection failed:', error);
 
       if (error instanceof Error) {
@@ -69,12 +74,10 @@ class WalletManager {
   }
 
   isMyAlgoAvailable(): boolean {
-    // Basic check if running in browser and MyAlgo is available
     return typeof window !== 'undefined' && !!window?.MyAlgoWallet;
   }
 
   isPeraAvailable(): boolean {
-    // Basic check if running in browser and Pera Wallet is injected
     return typeof window !== 'undefined' && !!window?.pera;
   }
 
@@ -111,7 +114,7 @@ export const signAndSendTip = async ({
   sender,
   recipient,
   amountAlgo,
-  devFeeAddress = 'REPLACE_WITH_YOUR_QUICKKASH_DEV_WALLET_ADDRESS', // <-- Replace this
+  devFeeAddress = 'YOUR_REAL_QUICKKASH_DEV_WALLET_ADDRESS_HERE', // <-- Replace with your real address
   algodClient,
 }: {
   sender: string;
@@ -159,7 +162,7 @@ export const signAndSendTip = async ({
 
     await algosdk.waitForConfirmation(client, txId, 4);
     return txId;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to sign and send tip transaction:', error);
     throw error;
   }
@@ -169,7 +172,7 @@ export const signAndSendTipWithWallet = async ({
   sender,
   recipient,
   amountAlgo,
-  devFeeAddress = 'REPLACE_WITH_YOUR_QUICKKASH_DEV_WALLET_ADDRESS', // <-- Replace this
+  devFeeAddress = 'YOUR_REAL_QUICKKASH_DEV_WALLET_ADDRESS_HERE', // <-- Replace with your real address
   walletType = 'pera',
   algodClient,
   note,
@@ -236,7 +239,7 @@ export const signAndSendTipWithWallet = async ({
     await algosdk.waitForConfirmation(client, txId, 4);
 
     return txId;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to sign and send tip with wallet:', error);
     throw error;
   }
