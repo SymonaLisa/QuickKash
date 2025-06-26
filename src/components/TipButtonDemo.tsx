@@ -113,21 +113,25 @@ export const TipButtonDemo: React.FC = () => {
           <h3 className="text-lg font-semibold text-primary mb-4">Usage Instructions</h3>
           <div className="space-y-3 text-sm text-secondary">
             <p>
-              <strong className="text-primary">1. Set Environment Variables:</strong> 
+              <strong className="text-primary">1. Set Environment Variables:</strong>{' '}
               Make sure your <code className="bg-slate-700 px-1 rounded">.env</code> file has:
             </p>
             <ul className="list-disc list-inside ml-4 space-y-1">
-              <li><code className="bg-slate-700 px-1 rounded">VITE_DEV_FEE_ADDRESS</code> - Your QuickKash wallet address</li>
-              <li><code className="bg-slate-700 px-1 rounded">VITE_ALGOD_TOKEN</code> - Your Nodely API token</li>
+              <li>
+                <code className="bg-slate-700 px-1 rounded">VITE_DEV_FEE_ADDRESS</code> - Your QuickKash wallet address
+              </li>
+              <li>
+                <code className="bg-slate-700 px-1 rounded">VITE_ALGOD_TOKEN</code> - Your Nodely API token
+              </li>
             </ul>
-            
+
             <p>
-              <strong className="text-primary">2. Replace Creator Wallet:</strong> 
+              <strong className="text-primary">2. Replace Creator Wallet:</strong>{' '}
               Update <code className="bg-slate-700 px-1 rounded">EXAMPLE_CREATOR_WALLET</code> with real Algorand addresses
             </p>
-            
+
             <p>
-              <strong className="text-primary">3. Connect Pera Wallet:</strong> 
+              <strong className="text-primary">3. Connect Pera Wallet:</strong>{' '}
               Users need Pera Wallet installed and connected to send tips
             </p>
           </div>
