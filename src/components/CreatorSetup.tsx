@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, MessageCircle, Image, Target, CheckCircle, Sparkles, Crown } from 'lucide-react';
 import { CreatorMetadata, localStorageManager } from '../utils/localStorage';
 import { WalletConnection } from '../utils/walletConnection';
@@ -23,12 +23,14 @@ export const CreatorSetup: React.FC<CreatorSetupProps> = ({ walletConnection, on
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [createdMetadata, setCreatedMetadata] = useState<CreatorMetadata | null>(null);
-  const [storageId, setStorageId] = useState<string>('');
+  const [storageId, setStorageId] = useState('');
   const [isPro, setIsPro] = useState(false);
 
-  React.useEffect(() => {
-    checkProStatusAndLoad();
-  }, [walletConnection.address]);
+  useEffect(() => {
+    if (walletConnection?.address) {
+      checkProStatusAndLoad();
+    }
+  }, [walletConnection?.address]);
 
   const checkProStatusAndLoad = async () => {
     try {
@@ -40,43 +42,50 @@ export const CreatorSetup: React.FC<CreatorSetupProps> = ({ walletConnection, on
     }
   };
 
+  const isValidUrl = (string: string) => {
+    try {
+      new URL(string);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.displayName.trim()) {
       newErrors.displayName = 'Display name is required';
     }
-    
+
     if (!formData.bio.trim()) {
       newErrors.bio = 'Bio is required';
     } else if (formData.bio.length > 280) {
       newErrors.bio = 'Bio must be 280 characters or less';
     }
-    
+
     if (formData.avatarUrl && !isValidUrl(formData.avatarUrl)) {
       newErrors.avatarUrl = 'Please enter a valid URL';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const isValidUrl = (string: string) => {
-    try {
-      new URL(string);
-      return true;
-    } catch (_) {
-      return false;
+  const handleInputChange = (field: keyof typeof formData, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     setIsSubmitting(true);
-    
+
     try {
       const metadata: CreatorMetadata = {
         displayName: formData.displayName.trim(),
@@ -86,25 +95,17 @@ export const CreatorSetup: React.FC<CreatorSetupProps> = ({ walletConnection, on
         walletAddress: walletConnection.address,
         createdAt: new Date().toISOString()
       };
-      
+
       const id = localStorageManager.saveCreatorMetadata(metadata);
       setCreatedMetadata(metadata);
       setStorageId(id);
-      
-      // Move to branding step if Pro, otherwise skip to content
+
       setCurrentStep(isPro ? 'branding' : 'content');
     } catch (error) {
       console.error('Setup failed:', error);
       setErrors({ submit: 'Failed to save profile. Please try again.' });
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
 
@@ -123,8 +124,7 @@ export const CreatorSetup: React.FC<CreatorSetupProps> = ({ walletConnection, on
   if (currentStep === 'branding' && createdMetadata && isPro) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/20 via-slate-900 to-slate-900"></div>
-        
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/20 via-slate-900 to-slate-900" />
         <div className="max-w-2xl w-full relative z-10">
           <div className="glass-card p-8">
             <div className="text-center mb-8">
@@ -136,32 +136,21 @@ export const CreatorSetup: React.FC<CreatorSetupProps> = ({ walletConnection, on
                   <Sparkles className="absolute -top-2 -right-2 w-6 h-6 text-emerald-400 animate-pulse" />
                 </div>
               </div>
-              <h1 className="text-3xl font-bold text-primary mb-3">
-                Customize Your Branding
-              </h1>
+              <h1 className="text-3xl font-bold text-primary mb-3">Customize Your Branding</h1>
               <p className="text-secondary leading-relaxed mb-4">
                 Personalize your tip jar with custom colors, fonts, and branding
               </p>
               <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 backdrop-blur-sm">
-                <p className="text-emerald-300 text-sm font-medium">
-                  👑 Pro Feature - Make your tip jar uniquely yours
-                </p>
+                <p className="text-emerald-300 text-sm font-medium">👑 Pro Feature - Make your tip jar uniquely yours</p>
               </div>
             </div>
 
-            <ProBrandingCustomizer 
-              walletAddress={walletConnection.address}
-              onBrandingChange={() => {}}
-            />
+            <ProBrandingCustomizer walletAddress={walletConnection.address} onBrandingChange={() => {}} />
 
             <div className="mt-8 flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
-              <button
-                onClick={handleNextStep}
-                className="flex-1 py-4 btn-primary"
-              >
+              <button onClick={handleNextStep} className="flex-1 py-4 btn-primary">
                 Continue to Premium Content
               </button>
-              
               <button
                 onClick={handleNextStep}
                 className="px-6 py-4 bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 rounded-xl transition-colors border border-slate-600"
@@ -178,8 +167,7 @@ export const CreatorSetup: React.FC<CreatorSetupProps> = ({ walletConnection, on
   if (currentStep === 'content' && createdMetadata) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/20 via-slate-900 to-slate-900"></div>
-        
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/20 via-slate-900 to-slate-900" />
         <div className="max-w-2xl w-full relative z-10">
           <div className="glass-card p-8">
             <div className="text-center mb-8">
@@ -191,9 +179,7 @@ export const CreatorSetup: React.FC<CreatorSetupProps> = ({ walletConnection, on
                   <Sparkles className="absolute -top-2 -right-2 w-6 h-6 text-emerald-400 animate-pulse" />
                 </div>
               </div>
-              <h1 className="text-3xl font-bold text-primary mb-3">
-                Add Premium Content
-              </h1>
+              <h1 className="text-3xl font-bold text-primary mb-3">Add Premium Content</h1>
               <p className="text-secondary leading-relaxed mb-4">
                 Set up exclusive content that unlocks when supporters tip 10+ ALGO
               </p>
@@ -204,19 +190,12 @@ export const CreatorSetup: React.FC<CreatorSetupProps> = ({ walletConnection, on
               </div>
             </div>
 
-            <PremiumContentManager 
-              creatorAddress={walletConnection.address}
-              onContentAdded={() => {}}
-            />
+            <PremiumContentManager creatorAddress={walletConnection.address} onContentAdded={() => {}} />
 
             <div className="mt-8 flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
-              <button
-                onClick={handleFinishSetup}
-                className="flex-1 py-4 btn-primary"
-              >
+              <button onClick={handleFinishSetup} className="flex-1 py-4 btn-primary">
                 Complete Setup
               </button>
-              
               <button
                 onClick={handleFinishSetup}
                 className="px-6 py-4 bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 rounded-xl transition-colors border border-slate-600"
@@ -232,8 +211,7 @@ export const CreatorSetup: React.FC<CreatorSetupProps> = ({ walletConnection, on
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/20 via-slate-900 to-slate-900"></div>
-      
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/20 via-slate-900 to-slate-900" />
       <div className="max-w-2xl w-full relative z-10">
         <div className="glass-card p-8">
           <div className="text-center mb-8">
@@ -248,9 +226,7 @@ export const CreatorSetup: React.FC<CreatorSetupProps> = ({ walletConnection, on
             <div className="flex justify-center mb-4">
               <QuickKashLogo size="medium" showIcon={false} />
             </div>
-            <h1 className="text-2xl font-bold text-primary mb-3">
-              Set Up Your Profile
-            </h1>
+            <h1 className="text-2xl font-bold text-primary mb-3">Set Up Your Profile</h1>
             <p className="text-secondary leading-relaxed">
               Create your profile and start receiving ALGO tips with premium content rewards
             </p>
@@ -283,9 +259,7 @@ export const CreatorSetup: React.FC<CreatorSetupProps> = ({ walletConnection, on
                 placeholder="Your name or brand"
                 maxLength={50}
               />
-              {errors.displayName && (
-                <p className="mt-1 text-sm text-red-400">{errors.displayName}</p>
-              )}
+              {errors.displayName && <p className="mt-1 text-sm text-red-400">{errors.displayName}</p>}
             </div>
 
             <div>
@@ -303,9 +277,7 @@ export const CreatorSetup: React.FC<CreatorSetupProps> = ({ walletConnection, on
                 rows={4}
                 maxLength={280}
               />
-              {errors.bio && (
-                <p className="mt-1 text-sm text-red-400">{errors.bio}</p>
-              )}
+              {errors.bio && <p className="mt-1 text-sm text-red-400">{errors.bio}</p>}
             </div>
 
             <div>
@@ -322,9 +294,7 @@ export const CreatorSetup: React.FC<CreatorSetupProps> = ({ walletConnection, on
                 }`}
                 placeholder="https://example.com/your-avatar.jpg"
               />
-              {errors.avatarUrl && (
-                <p className="mt-1 text-sm text-red-400">{errors.avatarUrl}</p>
-              )}
+              {errors.avatarUrl && <p className="mt-1 text-sm text-red-400">{errors.avatarUrl}</p>}
             </div>
 
             <div>
@@ -353,8 +323,11 @@ export const CreatorSetup: React.FC<CreatorSetupProps> = ({ walletConnection, on
               disabled={isSubmitting}
               className="w-full py-4 btn-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              {isSubmitting ? 'Creating Profile...' : 
-                isPro ? 'Continue to Branding' : 'Continue to Premium Content'}
+              {isSubmitting
+                ? 'Creating Profile...'
+                : isPro
+                ? 'Continue to Branding'
+                : 'Continue to Premium Content'}
             </button>
           </form>
         </div>
