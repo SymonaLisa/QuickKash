@@ -8,7 +8,7 @@ import { Loader2 } from 'lucide-react';
 export const CreatorProfileManager: React.FC = () => {
   const { walletAddress } = useParams<{ walletAddress: string }>();
   const navigate = useNavigate();
-  
+
   const [profileExists, setProfileExists] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -22,9 +22,9 @@ export const CreatorProfileManager: React.FC = () => {
 
   const checkProfileExists = async () => {
     if (!walletAddress) return;
-    
+
     setLoading(true);
-    
+
     try {
       const creator = await supabaseManager.getCreatorByWallet(walletAddress);
       setProfileExists(!!creator);
@@ -51,13 +51,11 @@ export const CreatorProfileManager: React.FC = () => {
     );
   }
 
-  if (!walletAddress) {
-    return null;
-  }
+  if (!walletAddress) return null;
 
   if (profileExists === false) {
     return (
-      <CreatorProfileSetup 
+      <CreatorProfileSetup
         walletAddress={walletAddress}
         onProfileCreated={handleProfileCreated}
       />
