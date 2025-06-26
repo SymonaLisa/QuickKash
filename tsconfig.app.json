@@ -1,24 +1,24 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "skipLibCheck": true,
+    "target": "ES2020",                        // Target modern JS environment
+    "useDefineForClassFields": true,          // Align with ES private fields semantics
+    "lib": ["ES2020", "DOM", "DOM.Iterable"], // Include standard libs for DOM & ES2020
+    "module": "ESNext",                        // Use ESNext modules for bundler compatibility
+    "skipLibCheck": true,                      // Skip type checking of declaration files for speed
 
     /* Bundler mode */
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "isolatedModules": true,
-    "moduleDetection": "force",
-    "noEmit": true,
-    "jsx": "react-jsx",
+    "moduleResolution": "bundler",             // Resolves modules like bundlers do (Vite)
+    "allowImportingTsExtensions": true,        // Allow imports with .ts extensions
+    "isolatedModules": true,                    // Ensures every file can be transpiled separately
+    "moduleDetection": "force",                 // Forces TS to detect modules explicitly
+    "noEmit": true,                             // Don't output compiled JS (handled by bundler)
+    "jsx": "react-jsx",                         // Use new JSX transform from React 17+
 
     /* Linting */
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "strict": true,                             // Enable all strict type checking options
+    "noUnusedLocals": true,                     // Warn about unused locals
+    "noUnusedParameters": true,                 // Warn about unused function parameters
+    "noFallthroughCasesInSwitch": true         // Report fallthrough cases in switch statements
   },
   "include": ["src"]
 }
