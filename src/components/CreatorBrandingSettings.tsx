@@ -5,7 +5,6 @@ import {
   Type, 
   Save, 
   Eye, 
-  Upload,
   Sparkles,
   Check,
   AlertCircle,
@@ -36,7 +35,6 @@ export const CreatorBrandingSettings: React.FC<BrandingSettingsProps> = ({
   const [isPro, setIsPro] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   
@@ -49,21 +47,25 @@ export const CreatorBrandingSettings: React.FC<BrandingSettingsProps> = ({
     brandingEnabled: false
   });
 
+  // Validate hex color format (#rrggbb)
+  const isValidHexColor = (color: string) => /^#[0-9A-Fa-f]{6}$/.test(color);
+
   useEffect(() => {
+    if (!walletAddress) return; // Skip if no walletAddress
+
     checkProStatusAndLoadBranding();
   }, [walletAddress]);
 
   const checkProStatusAndLoadBranding = async () => {
     setLoading(true);
     setError(null);
+    setSuccess(null);
     
     try {
-      // Check Pro status
       const proStatus = await checkProStatus(walletAddress);
       setIsPro(proStatus);
       
       if (proStatus) {
-        // Load existing branding settings
         await loadBrandingSettings();
       }
     } catch (err) {
@@ -118,9 +120,19 @@ export const CreatorBrandingSettings: React.FC<BrandingSettingsProps> = ({
   };
 
   const saveBrandingSettings = async () => {
-    setSaving(true);
+    // Validate colors before saving
+    if (
+      !isValidHexColor(branding.customPrimaryColor || '') || 
+      !isValidHexColor(branding.customSecondaryColor || '')
+    ) {
+      setError('Please enter valid hex colors for primary and secondary colors.');
+      setSuccess(null);
+      return;
+    }
+
     setError(null);
     setSuccess(null);
+    setSaving(true);
 
     try {
       const { error } = await supabase
@@ -230,6 +242,7 @@ export const CreatorBrandingSettings: React.FC<BrandingSettingsProps> = ({
             <p className="text-sm text-secondary">Apply your custom branding to your tip jar</p>
           </div>
           <button
+            aria-label="Toggle custom branding"
             onClick={() => handleBrandingUpdate({ brandingEnabled: !branding.brandingEnabled })}
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
               branding.brandingEnabled ? 'bg-emerald-600' : 'bg-slate-600'
@@ -297,11 +310,11 @@ export const CreatorBrandingSettings: React.FC<BrandingSettingsProps> = ({
                   <div 
                     className="w-4 h-4 rounded-full" 
                     style={{ backgroundColor: preset.primary }}
-                  ></div>
+                  />
                   <div 
                     className="w-4 h-4 rounded-full" 
                     style={{ backgroundColor: preset.secondary }}
-                  ></div>
+                  />
                 </div>
                 <span className="text-sm font-medium text-slate-300">{preset.name}</span>
               </button>
@@ -398,6 +411,7 @@ export const CreatorBrandingSettings: React.FC<BrandingSettingsProps> = ({
                   src={branding.customLogoUrl} 
                   alt="Logo" 
                   className="w-12 h-12 rounded-lg object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
               ) : (
                 <div 
