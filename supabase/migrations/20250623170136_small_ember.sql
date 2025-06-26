@@ -17,16 +17,15 @@
     - Provides flexibility for promotional access, testing, or manual upgrades
 */
 
--- Add is_pro field to creators table
 DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.columns
     WHERE table_name = 'creators' AND column_name = 'is_pro'
   ) THEN
-    ALTER TABLE creators ADD COLUMN is_pro boolean DEFAULT false;
+    ALTER TABLE creators ADD COLUMN is_pro boolean DEFAULT false NOT NULL;
   END IF;
-END $$;
+END
+$$;
 
--- Add comment to document the field purpose
 COMMENT ON COLUMN creators.is_pro IS 'Manual toggle for premium features like custom branding. Can be set independently of subscription status.';
