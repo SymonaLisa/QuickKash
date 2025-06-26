@@ -10,13 +10,13 @@ interface SubscriptionManagerProps {
 export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
   walletAddress,
   onSubscriptionChange,
-}) => {
+}): JSX.Element => {
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus>({
     isActive: false,
     tier: 'free',
   });
   const [availableTiers, setAvailableTiers] = useState<SubscriptionTier[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,7 +24,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
     initializeSubscriptions();
   }, [walletAddress]);
 
-  const initializeSubscriptions = async () => {
+  const initializeSubscriptions = async (): Promise<void> => {
     setLoading(true);
     setError(null);
 
@@ -39,9 +39,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
       setSubscriptionStatus(status);
       setAvailableTiers(tiers);
 
-      if (onSubscriptionChange) {
-        onSubscriptionChange(status);
-      }
+      onSubscriptionChange?.(status);
     } catch (err) {
       setError('Failed to load subscription information');
       console.error('Subscription initialization failed:', err);
@@ -50,7 +48,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
     }
   };
 
-  const handlePurchase = async (packageId: string) => {
+  const handlePurchase = async (packageId: string): Promise<void> => {
     setPurchasing(packageId);
     setError(null);
 
@@ -60,12 +58,9 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
       if (result.success) {
         const newStatus = await revenueCatManager.getSubscriptionStatus();
         setSubscriptionStatus(newStatus);
-
-        if (onSubscriptionChange) {
-          onSubscriptionChange(newStatus);
-        }
+        onSubscriptionChange?.(newStatus);
       } else {
-        setError(result.error || 'Purchase failed');
+        setError(result.error ?? 'Purchase failed');
       }
     } catch (err) {
       setError('Purchase failed. Please try again.');
@@ -75,7 +70,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
     }
   };
 
-  const handleRestore = async () => {
+  const handleRestore = async (): Promise<void> => {
     setLoading(true);
     setError(null);
 
@@ -85,12 +80,9 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
       if (result.success) {
         const newStatus = await revenueCatManager.getSubscriptionStatus();
         setSubscriptionStatus(newStatus);
-
-        if (onSubscriptionChange) {
-          onSubscriptionChange(newStatus);
-        }
+        onSubscriptionChange?.(newStatus);
       } else {
-        setError(result.error || 'Restore failed');
+        setError(result.error ?? 'Restore failed');
       }
     } catch (err) {
       setError('Restore failed. Please try again.');
@@ -111,7 +103,9 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
     }
   };
 
-  const getCurrentTierFeatures = () => revenueCatManager.getFeaturesByTier(subscriptionStatus.tier);
+  const getCurrentTierFeatures = (): string[] => {
+    return revenueCatManager.getFeaturesByTier(subscriptionStatus.tier) ?? [];
+  };
 
   if (loading) {
     return (
@@ -277,3 +271,4 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
     </div>
   );
 };
+
