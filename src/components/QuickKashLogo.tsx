@@ -6,9 +6,9 @@ interface QuickKashLogoProps {
   showIcon?: boolean;
 }
 
-export const QuickKashLogo: React.FC<QuickKashLogoProps> = ({ 
-  size = 'medium', 
-  showIcon = true 
+export const QuickKashLogo: React.FC<QuickKashLogoProps> = ({
+  size = 'medium',
+  showIcon = true
 }) => {
   const sizeClasses = {
     small: 'text-xl',
@@ -23,9 +23,9 @@ export const QuickKashLogo: React.FC<QuickKashLogoProps> = ({
   };
 
   return (
-    <div className="flex items-center space-x-2">
+    <div className="flex items-center space-x-2" aria-label="QuickKash Logo">
       {showIcon && (
-        <div className="relative">
+        <div className="relative" aria-hidden="true">
           <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-2 shadow-lg">
             <Zap className={`${iconSizes[size]} text-white`} />
           </div>
@@ -34,7 +34,9 @@ export const QuickKashLogo: React.FC<QuickKashLogoProps> = ({
           </div>
         </div>
       )}
-      <span className={`${sizeClasses[size]} font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent`}>
+      <span
+        className={`${sizeClasses[size]} font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent select-none`}
+      >
         QuickKash
       </span>
     </div>
