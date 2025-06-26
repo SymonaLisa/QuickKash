@@ -7,13 +7,13 @@ interface SubscriptionManagerProps {
   onSubscriptionChange?: (status: SubscriptionStatus) => void;
 }
 
-export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ 
-  walletAddress, 
-  onSubscriptionChange 
+export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
+  walletAddress,
+  onSubscriptionChange,
 }) => {
-  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus>({ 
-    isActive: false, 
-    tier: 'free' 
+  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus>({
+    isActive: false,
+    tier: 'free',
   });
   const [availableTiers, setAvailableTiers] = useState<SubscriptionTier[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,18 +29,16 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
     setError(null);
 
     try {
-      // Configure RevenueCat with wallet address
       await revenueCatManager.configure(walletAddress);
-      
-      // Load current subscription status and available tiers
+
       const [status, tiers] = await Promise.all([
         revenueCatManager.getSubscriptionStatus(),
-        revenueCatManager.getOfferings()
+        revenueCatManager.getOfferings(),
       ]);
 
       setSubscriptionStatus(status);
       setAvailableTiers(tiers);
-      
+
       if (onSubscriptionChange) {
         onSubscriptionChange(status);
       }
@@ -58,12 +56,11 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
 
     try {
       const result = await revenueCatManager.purchasePackage(packageId);
-      
+
       if (result.success) {
-        // Refresh subscription status
         const newStatus = await revenueCatManager.getSubscriptionStatus();
         setSubscriptionStatus(newStatus);
-        
+
         if (onSubscriptionChange) {
           onSubscriptionChange(newStatus);
         }
@@ -72,6 +69,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
       }
     } catch (err) {
       setError('Purchase failed. Please try again.');
+      console.error(err);
     } finally {
       setPurchasing(null);
     }
@@ -83,11 +81,11 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
 
     try {
       const result = await revenueCatManager.restorePurchases();
-      
+
       if (result.success) {
         const newStatus = await revenueCatManager.getSubscriptionStatus();
         setSubscriptionStatus(newStatus);
-        
+
         if (onSubscriptionChange) {
           onSubscriptionChange(newStatus);
         }
@@ -96,6 +94,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
       }
     } catch (err) {
       setError('Restore failed. Please try again.');
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -103,15 +102,16 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
 
   const getTierIcon = (tierId: string) => {
     switch (tierId) {
-      case 'pro': return Zap;
-      case 'creator_plus': return Crown;
-      default: return Shield;
+      case 'pro':
+        return Zap;
+      case 'creator_plus':
+        return Crown;
+      default:
+        return Shield;
     }
   };
 
-  const getCurrentTierFeatures = () => {
-    return revenueCatManager.getFeaturesByTier(subscriptionStatus.tier);
-  };
+  const getCurrentTierFeatures = () => revenueCatManager.getFeaturesByTier(subscriptionStatus.tier);
 
   if (loading) {
     return (
@@ -144,17 +144,22 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
         <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 mb-4">
           <div className="flex items-center justify-between mb-2">
             <span className="font-medium text-primary">
-              Current Plan: {subscriptionStatus.tier === 'free' ? 'Free' : subscriptionStatus.tier.replace('_', ' ').toUpperCase()}
+              Current Plan:{' '}
+              {subscriptionStatus.tier === 'free'
+                ? 'Free'
+                : subscriptionStatus.tier.replace('_', ' ').toUpperCase()}
             </span>
-            <span className={`text-sm px-2 py-1 rounded-full ${
-              subscriptionStatus.isActive 
-                ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' 
-                : 'bg-slate-700/50 text-slate-400'
-            }`}>
+            <span
+              className={`text-sm px-2 py-1 rounded-full ${
+                subscriptionStatus.isActive
+                  ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20'
+                  : 'bg-slate-700/50 text-slate-400'
+              }`}
+            >
               {subscriptionStatus.isActive ? 'Active' : 'Inactive'}
             </span>
           </div>
-          
+
           {subscriptionStatus.expiresAt && (
             <p className="text-sm text-muted">
               Expires: {subscriptionStatus.expiresAt.toLocaleDateString()}
@@ -167,7 +172,10 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
           <h4 className="font-medium text-secondary mb-2">Your Features:</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {getCurrentTierFeatures().map((feature, index) => (
-              <div key={index} className="flex items-center space-x-2 text-sm text-secondary">
+              <div
+                key={index}
+                className="flex items-center space-x-2 text-sm text-secondary"
+              >
                 <Check className="w-4 h-4 text-emerald-400" />
                 <span>{feature}</span>
               </div>
@@ -179,6 +187,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
           onClick={handleRestore}
           disabled={loading}
           className="w-full py-2 btn-secondary text-sm"
+          aria-label="Restore previous purchases"
         >
           Restore Purchases
         </button>
@@ -188,12 +197,12 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
       {!subscriptionStatus.isActive && availableTiers.length > 0 && (
         <div className="glass-card p-6">
           <h3 className="text-xl font-bold text-primary mb-6">Upgrade Your Plan</h3>
-          
+
           <div className="grid gap-4">
             {availableTiers.map((tier) => {
               const Icon = getTierIcon(tier.id);
               const isPurchasing = purchasing === tier.packageId;
-              
+
               return (
                 <div
                   key={tier.id}
@@ -201,11 +210,13 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-3">
-                      <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                        tier.id === 'creator_plus' 
-                          ? 'bg-gradient-to-r from-purple-500 to-pink-500' 
-                          : 'bg-gradient-to-r from-emerald-500 to-teal-500'
-                      }`}>
+                      <div
+                        className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                          tier.id === 'creator_plus'
+                            ? 'bg-gradient-to-r from-purple-500 to-pink-500'
+                            : 'bg-gradient-to-r from-emerald-500 to-teal-500'
+                        }`}
+                      >
                         <Icon className="w-6 h-6 text-white" />
                       </div>
                       <div>
@@ -221,7 +232,10 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
                   <div className="mb-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {tier.features.map((feature, index) => (
-                        <div key={index} className="flex items-center space-x-2 text-sm text-secondary">
+                        <div
+                          key={index}
+                          className="flex items-center space-x-2 text-sm text-secondary"
+                        >
                           <Check className="w-4 h-4 text-emerald-400" />
                           <span>{feature}</span>
                         </div>
@@ -237,6 +251,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
                         ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white'
                         : 'btn-primary'
                     } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    aria-label={`Subscribe to ${tier.name} plan`}
                   >
                     {isPurchasing ? (
                       <div className="flex items-center justify-center space-x-2">
@@ -255,7 +270,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
       )}
 
       {error && (
-        <div className="glass-card p-4 bg-red-500/10 border border-red-500/20">
+        <div className="glass-card p-4 bg-red-500/10 border border-red-500/20 rounded-xl mt-4">
           <p className="text-red-300 text-sm">{error}</p>
         </div>
       )}
