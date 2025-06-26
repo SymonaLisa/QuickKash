@@ -10,9 +10,9 @@ interface TipJarCreatedProps {
 
 export const TipJarCreated: React.FC<TipJarCreatedProps> = ({ metadata, storageId }) => {
   const [copied, setCopied] = useState(false);
-  
+
   const tipJarUrl = `${window.location.origin}/creator/${metadata.walletAddress}`;
-  
+
   const handleCopyUrl = async () => {
     try {
       await navigator.clipboard.writeText(tipJarUrl);
@@ -41,7 +41,7 @@ export const TipJarCreated: React.FC<TipJarCreatedProps> = ({ metadata, storageI
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/20 via-slate-900 to-slate-900"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/20 via-slate-900 to-slate-900" />
       
       <div className="max-w-2xl w-full relative z-10">
         <div className="glass-card p-8">
@@ -54,9 +54,7 @@ export const TipJarCreated: React.FC<TipJarCreatedProps> = ({ metadata, storageI
             <div className="flex justify-center mb-4">
               <QuickKashLogo size="large" />
             </div>
-            <h1 className="text-3xl font-bold text-primary mb-3">
-              🎉 Your Tip Jar is Live!
-            </h1>
+            <h1 className="text-3xl font-bold text-primary mb-3">🎉 Your Tip Jar is Live!</h1>
             <p className="text-secondary leading-relaxed mb-4">
               Your audience can now send you ALGO tips using the link below
             </p>
@@ -70,8 +68,8 @@ export const TipJarCreated: React.FC<TipJarCreatedProps> = ({ metadata, storageI
           <div className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 rounded-2xl p-6 mb-6 border border-slate-600/50 backdrop-blur-sm">
             <div className="flex items-center space-x-4 mb-4">
               {metadata.avatarUrl && (
-                <img 
-                  src={metadata.avatarUrl} 
+                <img
+                  src={metadata.avatarUrl}
                   alt={metadata.displayName}
                   className="w-16 h-16 rounded-xl object-cover shadow-md"
                 />
@@ -101,8 +99,8 @@ export const TipJarCreated: React.FC<TipJarCreatedProps> = ({ metadata, storageI
                 <button
                   onClick={handleCopyUrl}
                   className={`px-4 py-3 rounded-xl transition-all duration-200 ${
-                    copied 
-                      ? 'bg-emerald-500 text-white' 
+                    copied
+                      ? 'bg-emerald-500 text-white'
                       : 'bg-slate-700/50 hover:bg-slate-600/50 text-slate-300'
                   }`}
                 >
@@ -122,7 +120,7 @@ export const TipJarCreated: React.FC<TipJarCreatedProps> = ({ metadata, storageI
                 <Share2 className="w-4 h-4" />
                 <span>Share QuickKash</span>
               </button>
-              
+
               <a
                 href={tipJarUrl}
                 target="_blank"
@@ -137,11 +135,15 @@ export const TipJarCreated: React.FC<TipJarCreatedProps> = ({ metadata, storageI
           <div className="mt-8 pt-6 border-t border-slate-700">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-center">
               <div>
-                <p className="text-2xl font-bold text-emerald-400">{metadata.walletAddress.slice(0, 8)}...</p>
+                <p className="text-2xl font-bold text-emerald-400">
+                  {metadata.walletAddress.slice(0, 8)}...
+                </p>
                 <p className="text-sm text-muted">Wallet Address</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-emerald-400">{storageId.slice(8, 16)}...</p>
+                <p className="text-2xl font-bold text-emerald-400">
+                  {storageId.slice(8, 16)}...
+                </p>
                 <p className="text-sm text-muted">Profile ID</p>
               </div>
             </div>
