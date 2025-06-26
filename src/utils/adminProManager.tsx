@@ -2,6 +2,31 @@ import React, { useState, useEffect } from 'react';
 import { Crown, Check, Loader2, Star, Zap, Shield, Settings } from 'lucide-react';
 import { revenueCatManager, SubscriptionTier, SubscriptionStatus } from '../utils/revenueCat';
 
+// --- Missing Pro status functions ---
+
+// This is a simple in-memory map to simulate Pro statuses for demo.
+// Replace with your real backend/database logic.
+const proStatusMap = new Map<string, boolean>();
+
+export async function setCreatorProStatus(wallet: string, isPro: boolean): Promise<void> {
+  proStatusMap.set(wallet, isPro);
+  // TODO: Add real persistence logic here (e.g., API call)
+}
+
+export async function getCreatorProStatus(wallet: string): Promise<boolean> {
+  // TODO: Replace with real fetch logic
+  return proStatusMap.get(wallet) ?? false;
+}
+
+export async function getAllProCreators(): Promise<string[]> {
+  // TODO: Replace with real fetch logic (e.g., get all wallets where pro=true)
+  return Array.from(proStatusMap.entries())
+    .filter(([_, isPro]) => isPro)
+    .map(([wallet]) => wallet);
+}
+
+// --- Existing SubscriptionManager component ---
+
 interface SubscriptionManagerProps {
   walletAddress: string;
   onSubscriptionChange?: (status: SubscriptionStatus) => void;
@@ -271,4 +296,3 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
     </div>
   );
 };
-
