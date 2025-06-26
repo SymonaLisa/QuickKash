@@ -150,12 +150,15 @@ export async function checkProStatusBatch(walletAddresses: string[]): Promise<Re
       return {};
     }
 
-    // Check all addresses
+    // Check all addresses in parallel for efficiency
+    const resultsArray = await Promise.all(
+      validAddresses.map(addr => checkProStatus(addr))
+    );
+
     const results: Record<string, boolean> = {};
-    
-    for (const address of validAddresses) {
-      results[address] = await checkProStatus(address);
-    }
+    validAddresses.forEach((addr, i) => {
+      results[addr] = resultsArray[i];
+    });
 
     return results;
 
