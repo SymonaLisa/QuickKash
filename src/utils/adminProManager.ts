@@ -1,387 +1,279 @@
-import { supabase } from './supabase';
+import React, { useState, useEffect } from 'react';
+import { Crown, Check, Loader2, Star, Zap, Shield, Settings } from 'lucide-react';
+import { revenueCatManager, SubscriptionTier, SubscriptionStatus } from '../utils/revenueCat';
 
-export interface ProStatusUpdateResult {
-  success: boolean;
-  error?: string;
-  previousStatus?: boolean;
-  newStatus?: boolean;
+interface SubscriptionManagerProps {
+  walletAddress: string;
+  onSubscriptionChange?: (status: SubscriptionStatus) => void;
 }
 
-export interface AdminProManagerConfig {
-  adminKey?: string; // Optional admin key for additional security
-  requireAuth?: boolean; // Whether to require authentication
-}
+export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
+  walletAddress,
+  onSubscriptionChange,
+}) => {
+  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus>({
+    isActive: false,
+    tier: 'free',
+  });
+  const [availableTiers, setAvailableTiers] = useState<SubscriptionTier[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [purchasing, setPurchasing] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-/**
- * Admin function to update Pro status for a creator
- * This should only be used by authorized administrators
- */
-export class AdminProManager {
-  private config: AdminProManagerConfig;
+  useEffect(() => {
+    initializeSubscriptions();
+  }, [walletAddress]);
 
-  constructor(config: AdminProManagerConfig = {}) {
-    this.config = {
-      requireAuth: true,
-      ...config
-    };
-  }
+  const initializeSubscriptions = async () => {
+    setLoading(true);
+    setError(null);
 
-  /**
-   * Set Pro status for a creator by wallet address
-   * @param walletAddress - The creator's wallet address
-   * @param isPro - Whether to grant or revoke Pro status
-   * @param adminNote - Optional note about the change
-   * @returns Promise with operation result
-   */
-  async setProStatus(
-    walletAddress: string,
-    isPro: boolean,
-    adminNote?: string
-  ): Promise<ProStatusUpdateResult> {
     try {
-      // Validate input
-      if (!walletAddress || typeof walletAddress !== 'string') {
-        return {
-          success: false,
-          error: 'Invalid wallet address provided'
-        };
+      await revenueCatManager.configure(walletAddress);
+
+      const [status, tiers] = await Promise.all([
+        revenueCatManager.getSubscriptionStatus(),
+        revenueCatManager.getOfferings(),
+      ]);
+
+      setSubscriptionStatus(status);
+      setAvailableTiers(tiers);
+
+      if (onSubscriptionChange) {
+        onSubscriptionChange(status);
       }
+    } catch (err) {
+      setError('Failed to load subscription information');
+      console.error('Subscription initialization failed:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      if (typeof isPro !== 'boolean') {
-        return {
-          success: false,
-          error: 'isPro must be a boolean value'
-        };
-      }
+  const handlePurchase = async (packageId: string) => {
+    setPurchasing(packageId);
+    setError(null);
 
-      // Get current status first
-      const { data: currentData, error: fetchError } = await supabase
-        .from('creators')
-        .select('is_pro')
-        .eq('id', walletAddress)
-        .single();
+    try {
+      const result = await revenueCatManager.purchasePackage(packageId);
 
-      let previousStatus: boolean | undefined;
-      
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        // Error other than "not found"
-        return {
-          success: false,
-          error: `Failed to fetch current status: ${fetchError.message}`
-        };
-      }
+      if (result.success) {
+        const newStatus = await revenueCatManager.getSubscriptionStatus();
+        setSubscriptionStatus(newStatus);
 
-      if (currentData) {
-        previousStatus = Boolean(currentData.is_pro);
-      }
-
-      // If creator doesn't exist, we need to create them first
-      if (fetchError?.code === 'PGRST116') {
-        // Creator doesn't exist, create with minimal required fields
-        const { error: createError } = await supabase
-          .from('creators')
-          .insert({
-            id: walletAddress,
-            name: 'Unknown Creator',
-            email: `${walletAddress}@placeholder.com`,
-            paypal_username: walletAddress,
-            is_pro: isPro,
-            created_at: new Date().toISOString()
-          });
-
-        if (createError) {
-          return {
-            success: false,
-            error: `Failed to create creator: ${createError.message}`
-          };
+        if (onSubscriptionChange) {
+          onSubscriptionChange(newStatus);
         }
-
-        // Log the admin action
-        await this.logAdminAction(walletAddress, undefined, isPro, adminNote);
-
-        return {
-          success: true,
-          previousStatus: undefined,
-          newStatus: isPro
-        };
+      } else {
+        setError(result.error || 'Purchase failed');
       }
-
-      // Update existing creator
-      const { error: updateError } = await supabase
-        .from('creators')
-        .update({ 
-          is_pro: isPro,
-          // Optionally update a last_modified timestamp
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', walletAddress);
-
-      if (updateError) {
-        return {
-          success: false,
-          error: `Failed to update Pro status: ${updateError.message}`
-        };
-      }
-
-      // Log the admin action
-      await this.logAdminAction(walletAddress, previousStatus, isPro, adminNote);
-
-      return {
-        success: true,
-        previousStatus,
-        newStatus: isPro
-      };
-
-    } catch (error) {
-      console.error('Unexpected error in setProStatus:', error);
-      return {
-        success: false,
-        error: 'Unexpected error occurred'
-      };
+    } catch (err) {
+      setError('Purchase failed. Please try again.');
+      console.error(err);
+    } finally {
+      setPurchasing(null);
     }
-  }
+  };
 
-  /**
-   * Toggle Pro status for a creator
-   * @param walletAddress - The creator's wallet address
-   * @param adminNote - Optional note about the change
-   * @returns Promise with operation result
-   */
-  async toggleProStatus(
-    walletAddress: string,
-    adminNote?: string
-  ): Promise<ProStatusUpdateResult> {
+  const handleRestore = async () => {
+    setLoading(true);
+    setError(null);
+
     try {
-      // Get current status
-      const { data, error } = await supabase
-        .from('creators')
-        .select('is_pro')
-        .eq('id', walletAddress)
-        .single();
+      const result = await revenueCatManager.restorePurchases();
 
-      if (error && error.code !== 'PGRST116') {
-        return {
-          success: false,
-          error: `Failed to fetch current status: ${error.message}`
-        };
-      }
+      if (result.success) {
+        const newStatus = await revenueCatManager.getSubscriptionStatus();
+        setSubscriptionStatus(newStatus);
 
-      const currentStatus = data?.is_pro || false;
-      const newStatus = !currentStatus;
-
-      return await this.setProStatus(walletAddress, newStatus, adminNote);
-
-    } catch (error) {
-      console.error('Unexpected error in toggleProStatus:', error);
-      return {
-        success: false,
-        error: 'Unexpected error occurred'
-      };
-    }
-  }
-
-  /**
-   * Get Pro status for a creator
-   * @param walletAddress - The creator's wallet address
-   * @returns Promise with Pro status information
-   */
-  async getProStatus(walletAddress: string): Promise<{
-    success: boolean;
-    isPro?: boolean;
-    creatorExists?: boolean;
-    error?: string;
-  }> {
-    try {
-      const { data, error } = await supabase
-        .from('creators')
-        .select('is_pro, name, email')
-        .eq('id', walletAddress)
-        .single();
-
-      if (error) {
-        if (error.code === 'PGRST116') {
-          return {
-            success: true,
-            isPro: false,
-            creatorExists: false
-          };
+        if (onSubscriptionChange) {
+          onSubscriptionChange(newStatus);
         }
-        return {
-          success: false,
-          error: error.message
-        };
+      } else {
+        setError(result.error || 'Restore failed');
       }
-
-      return {
-        success: true,
-        isPro: Boolean(data.is_pro),
-        creatorExists: true
-      };
-
-    } catch (error) {
-      console.error('Unexpected error in getProStatus:', error);
-      return {
-        success: false,
-        error: 'Unexpected error occurred'
-      };
+    } catch (err) {
+      setError('Restore failed. Please try again.');
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const getTierIcon = (tierId: string) => {
+    switch (tierId) {
+      case 'pro':
+        return Zap;
+      case 'creator_plus':
+        return Crown;
+      default:
+        return Shield;
+    }
+  };
+
+  const getCurrentTierFeatures = () => revenueCatManager.getFeaturesByTier(subscriptionStatus.tier);
+
+  if (loading) {
+    return (
+      <div className="glass-card p-6">
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="w-6 h-6 animate-spin text-emerald-500 mr-3" />
+          <span className="text-secondary">Loading subscription information...</span>
+        </div>
+      </div>
+    );
   }
 
-  /**
-   * Get all Pro creators
-   * @param limit - Maximum number of results to return
-   * @returns Promise with list of Pro creators
-   */
-  async getProCreators(limit: number = 50): Promise<{
-    success: boolean;
-    creators?: Array<{
-      id: string;
-      name: string;
-      email: string;
-      is_pro: boolean;
-      created_at: string;
-    }>;
-    error?: string;
-  }> {
-    try {
-      const { data, error } = await supabase
-        .from('creators')
-        .select('id, name, email, is_pro, created_at')
-        .eq('is_pro', true)
-        .order('created_at', { ascending: false })
-        .limit(limit);
+  return (
+    <div className="space-y-6">
+      {/* Current Subscription Status */}
+      <div className="glass-card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-bold text-primary flex items-center">
+            <Settings className="w-5 h-5 mr-2 text-emerald-500" />
+            Subscription
+          </h3>
+          {subscriptionStatus.isActive && (
+            <div className="flex items-center space-x-1 px-3 py-1 bg-emerald-500/10 text-emerald-300 rounded-full text-sm font-medium border border-emerald-500/20">
+              <Star className="w-4 h-4" />
+              <span>{subscriptionStatus.tier.toUpperCase()}</span>
+            </div>
+          )}
+        </div>
 
-      if (error) {
-        return {
-          success: false,
-          error: error.message
-        };
-      }
+        <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="font-medium text-primary">
+              Current Plan:{' '}
+              {subscriptionStatus.tier === 'free'
+                ? 'Free'
+                : subscriptionStatus.tier.replace('_', ' ').toUpperCase()}
+            </span>
+            <span
+              className={`text-sm px-2 py-1 rounded-full ${
+                subscriptionStatus.isActive
+                  ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20'
+                  : 'bg-slate-700/50 text-slate-400'
+              }`}
+            >
+              {subscriptionStatus.isActive ? 'Active' : 'Inactive'}
+            </span>
+          </div>
 
-      return {
-        success: true,
-        creators: data || []
-      };
+          {subscriptionStatus.expiresAt && (
+            <p className="text-sm text-muted">
+              Expires: {subscriptionStatus.expiresAt.toLocaleDateString()}
+            </p>
+          )}
+        </div>
 
-    } catch (error) {
-      console.error('Unexpected error in getProCreators:', error);
-      return {
-        success: false,
-        error: 'Unexpected error occurred'
-      };
-    }
-  }
+        {/* Current Plan Features */}
+        <div className="mb-4">
+          <h4 className="font-medium text-secondary mb-2">Your Features:</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {getCurrentTierFeatures().map((feature, index) => (
+              <div
+                key={index}
+                className="flex items-center space-x-2 text-sm text-secondary"
+              >
+                <Check className="w-4 h-4 text-emerald-400" />
+                <span>{feature}</span>
+              </div>
+            ))}
+          </div>
+        </div>
 
-  /**
-   * Batch update Pro status for multiple creators
-   * @param updates - Array of wallet addresses and their new Pro status
-   * @param adminNote - Optional note about the batch change
-   * @returns Promise with batch operation results
-   */
-  async batchUpdateProStatus(
-    updates: Array<{ walletAddress: string; isPro: boolean }>,
-    adminNote?: string
-  ): Promise<{
-    success: boolean;
-    results?: Array<{ walletAddress: string; success: boolean; error?: string }>;
-    error?: string;
-  }> {
-    try {
-      const results = [];
+        <button
+          onClick={handleRestore}
+          disabled={loading}
+          className="w-full py-2 btn-secondary text-sm"
+          aria-label="Restore previous purchases"
+        >
+          Restore Purchases
+        </button>
+      </div>
 
-      for (const update of updates) {
-        const result = await this.setProStatus(
-          update.walletAddress,
-          update.isPro,
-          `${adminNote} (Batch operation)`
-        );
+      {/* Available Subscription Tiers */}
+      {!subscriptionStatus.isActive && availableTiers.length > 0 && (
+        <div className="glass-card p-6">
+          <h3 className="text-xl font-bold text-primary mb-6">Upgrade Your Plan</h3>
 
-        results.push({
-          walletAddress: update.walletAddress,
-          success: result.success,
-          error: result.error
-        });
-      }
+          <div className="grid gap-4">
+            {availableTiers.map((tier) => {
+              const Icon = getTierIcon(tier.id);
+              const isPurchasing = purchasing === tier.packageId;
 
-      return {
-        success: true,
-        results
-      };
+              return (
+                <div
+                  key={tier.id}
+                  className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50 hover:shadow-md transition-all duration-200"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      <div
+                        className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                          tier.id === 'creator_plus'
+                            ? 'bg-gradient-to-r from-purple-500 to-pink-500'
+                            : 'bg-gradient-to-r from-emerald-500 to-teal-500'
+                        }`}
+                      >
+                        <Icon className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-primary">{tier.name}</h4>
+                        <p className="text-sm text-secondary">{tier.description}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold text-emerald-400">{tier.price}</div>
+                    </div>
+                  </div>
 
-    } catch (error) {
-      console.error('Unexpected error in batchUpdateProStatus:', error);
-      return {
-        success: false,
-        error: 'Unexpected error occurred'
-      };
-    }
-  }
+                  <div className="mb-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {tier.features.map((feature, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center space-x-2 text-sm text-secondary"
+                        >
+                          <Check className="w-4 h-4 text-emerald-400" />
+                          <span>{feature}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
 
-  /**
-   * Log admin actions for audit trail
-   * @private
-   */
-  private async logAdminAction(
-    walletAddress: string,
-    previousStatus: boolean | undefined,
-    newStatus: boolean,
-    adminNote?: string
-  ): Promise<void> {
-    try {
-      // This would typically log to an admin_actions table
-      // For now, we'll just console log
-      const logEntry = {
-        timestamp: new Date().toISOString(),
-        action: 'pro_status_update',
-        target_wallet: walletAddress,
-        previous_status: previousStatus,
-        new_status: newStatus,
-        admin_note: adminNote,
-        admin_user: 'system' // In a real app, you'd get this from auth context
-      };
+                  <button
+                    onClick={() => handlePurchase(tier.packageId)}
+                    disabled={isPurchasing}
+                    className={`w-full py-3 rounded-xl font-semibold transition-all duration-200 ${
+                      tier.id === 'creator_plus'
+                        ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white'
+                        : 'btn-primary'
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    aria-label={`Subscribe to ${tier.name} plan`}
+                  >
+                    {isPurchasing ? (
+                      <div className="flex items-center justify-center space-x-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Processing...</span>
+                      </div>
+                    ) : (
+                      `Subscribe to ${tier.name}`
+                    )}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
-      console.log('Admin Action Log:', logEntry);
-
-      // Optionally, insert into an admin_logs table if it exists
-      // await supabase.from('admin_logs').insert(logEntry);
-
-    } catch (error) {
-      console.error('Failed to log admin action:', error);
-      // Don't throw here - logging failure shouldn't break the main operation
-    }
-  }
-
-  /**
-   * Validate admin permissions (placeholder for real auth)
-   * @private
-   */
-  private async validateAdminPermissions(): Promise<boolean> {
-    // In a real application, you would:
-    // 1. Check if user is authenticated
-    // 2. Verify admin role/permissions
-    // 3. Validate admin key if using one
-    
-    if (this.config.requireAuth) {
-      // Placeholder - implement your auth logic here
-      return true;
-    }
-
-    return true;
-  }
-}
-
-// Export a default instance
-export const adminProManager = new AdminProManager();
-
-// Export convenience functions
-export const setCreatorProStatus = (walletAddress: string, isPro: boolean, adminNote?: string) =>
-  adminProManager.setProStatus(walletAddress, isPro, adminNote);
-
-export const toggleCreatorProStatus = (walletAddress: string, adminNote?: string) =>
-  adminProManager.toggleProStatus(walletAddress, adminNote);
-
-export const getCreatorProStatus = (walletAddress: string) =>
-  adminProManager.getProStatus(walletAddress);
-
-export const getAllProCreators = (limit?: number) =>
-  adminProManager.getProCreators(limit);
+      {error && (
+        <div className="glass-card p-4 bg-red-500/10 border border-red-500/20 rounded-xl mt-4">
+          <p className="text-red-300 text-sm">{error}</p>
+        </div>
+      )}
+    </div>
+  );
+};
