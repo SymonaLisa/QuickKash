@@ -106,3 +106,4 @@ class AlgorandTransactionManager {
 }
 
 export const transactionManager = new AlgorandTransactionManager();
+
