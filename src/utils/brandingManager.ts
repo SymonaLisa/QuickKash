@@ -55,27 +55,30 @@ class BrandingManager {
    * Save branding settings for a creator
    */
   async saveBrandingSettings(
-    walletAddress: string, 
+    walletAddress: string,
     branding: BrandingSettings
   ): Promise<{ success: boolean; error?: string }> {
     try {
       const { error } = await supabase
         .from('creators')
-        .upsert({
-          id: walletAddress,
-          custom_primary_color: branding.customPrimaryColor || null,
-          custom_secondary_color: branding.customSecondaryColor || null,
-          custom_logo_url: branding.customLogoUrl || null,
-          custom_font: branding.customFont,
-          brand_name: branding.brandName || null,
-          branding_enabled: branding.brandingEnabled,
-          // Include required fields with defaults if creating new record
-          name: 'Creator',
-          email: `${walletAddress}@placeholder.com`,
-          paypal_username: walletAddress
-        }, {
-          onConflict: 'id'
-        });
+        .upsert(
+          {
+            id: walletAddress,
+            custom_primary_color: branding.customPrimaryColor || null,
+            custom_secondary_color: branding.customSecondaryColor || null,
+            custom_logo_url: branding.customLogoUrl || null,
+            custom_font: branding.customFont,
+            brand_name: branding.brandName || null,
+            branding_enabled: branding.brandingEnabled,
+            // Include required fields with defaults if creating new record
+            name: 'Creator',
+            email: `${walletAddress}@placeholder.com`,
+            paypal_username: walletAddress,
+          },
+          {
+            onConflict: 'id',
+          }
+        );
 
       if (error) {
         throw error;
@@ -84,9 +87,9 @@ class BrandingManager {
       return { success: true };
     } catch (error) {
       console.error('Failed to save branding settings:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to save branding settings' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to save branding settings',
       };
     }
   }
@@ -95,7 +98,7 @@ class BrandingManager {
    * Upload logo to Supabase Storage
    */
   async uploadLogo(
-    walletAddress: string, 
+    walletAddress: string,
     file: File
   ): Promise<{ success: boolean; url?: string; error?: string }> {
     try {
@@ -117,7 +120,7 @@ class BrandingManager {
         .from('creator-logos')
         .upload(fileName, file, {
           cacheControl: '3600',
-          upsert: false
+          upsert: false,
         });
 
       if (uploadError) {
@@ -136,9 +139,9 @@ class BrandingManager {
       return { success: true, url: urlData.publicUrl };
     } catch (error) {
       console.error('Logo upload failed:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to upload logo' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to upload logo',
       };
     }
   }
@@ -152,9 +155,7 @@ class BrandingManager {
       const urlParts = logoUrl.split('/');
       const fileName = urlParts[urlParts.length - 1];
 
-      const { error } = await supabase.storage
-        .from('creator-logos')
-        .remove([fileName]);
+      const { error } = await supabase.storage.from('creator-logos').remove([fileName]);
 
       if (error) {
         throw error;
@@ -163,9 +164,9 @@ class BrandingManager {
       return { success: true };
     } catch (error) {
       console.error('Logo deletion failed:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to delete logo' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to delete logo',
       };
     }
   }
@@ -212,7 +213,7 @@ class BrandingManager {
       return '';
     }
 
-    const styles = [];
+    const styles: string[] = [];
 
     if (branding.customPrimaryColor) {
       styles.push(`--brand-primary: ${branding.customPrimaryColor};`);
@@ -238,15 +239,15 @@ class BrandingManager {
     font: string;
   } {
     return {
-      primary: branding.brandingEnabled && branding.customPrimaryColor 
-        ? branding.customPrimaryColor 
-        : '#10b981',
-      secondary: branding.brandingEnabled && branding.customSecondaryColor 
-        ? branding.customSecondaryColor 
-        : '#14b8a6',
-      font: branding.brandingEnabled && branding.customFont 
-        ? branding.customFont 
-        : 'Inter'
+      primary:
+        branding.brandingEnabled && branding.customPrimaryColor
+          ? branding.customPrimaryColor
+          : '#10b981',
+      secondary:
+        branding.brandingEnabled && branding.customSecondaryColor
+          ? branding.customSecondaryColor
+          : '#14b8a6',
+      font: branding.brandingEnabled && branding.customFont ? branding.customFont : 'Inter',
     };
   }
 }
