@@ -8,7 +8,6 @@ import {
   Loader2, 
   AlertTriangle,
   Users,
-  Settings,
   Eye,
   EyeOff
 } from 'lucide-react';
@@ -33,6 +32,13 @@ interface CreatorProStatus {
   email?: string;
 }
 
+interface Creator {
+  id: string;
+  name?: string;
+  email?: string;
+  created_at: string;
+}
+
 export const AdminProPanel: React.FC<AdminProPanelProps> = ({ 
   isVisible = true, 
   onClose 
@@ -43,7 +49,7 @@ export const AdminProPanel: React.FC<AdminProPanelProps> = ({
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateResult, setUpdateResult] = useState<ProStatusUpdateResult | null>(null);
   const [adminNote, setAdminNote] = useState('');
-  const [proCreators, setProCreators] = useState<any[]>([]);
+  const [proCreators, setProCreators] = useState<Creator[]>([]);
   const [isLoadingProCreators, setIsLoadingProCreators] = useState(false);
   const [showProCreators, setShowProCreators] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +61,8 @@ export const AdminProPanel: React.FC<AdminProPanelProps> = ({
   }, [showProCreators]);
 
   const handleSearch = async () => {
-    if (!searchWallet.trim()) {
+    const wallet = searchWallet.trim().toLowerCase();
+    if (!wallet) {
       setError('Please enter a wallet address');
       return;
     }
@@ -66,18 +73,20 @@ export const AdminProPanel: React.FC<AdminProPanelProps> = ({
     setUpdateResult(null);
 
     try {
-      const result = await getCreatorProStatus(searchWallet.trim());
+      const result = await getCreatorProStatus(wallet);
       
       if (result.success) {
         setSearchResult({
-          walletAddress: searchWallet.trim(),
+          walletAddress: wallet,
           isPro: result.isPro || false,
-          creatorExists: result.creatorExists || false
+          creatorExists: result.creatorExists || false,
+          name: result.name,
+          email: result.email,
         });
       } else {
         setError(result.error || 'Failed to search creator');
       }
-    } catch (err) {
+    } catch {
       setError('Search failed. Please try again.');
     } finally {
       setIsSearching(false);
@@ -101,18 +110,13 @@ export const AdminProPanel: React.FC<AdminProPanelProps> = ({
       setUpdateResult(result);
       
       if (result.success) {
-        // Update the search result to reflect the change
         setSearchResult(prev => prev ? { ...prev, isPro: newStatus } : null);
-        setAdminNote(''); // Clear the note after successful update
-        
-        // Refresh Pro creators list if it's visible
-        if (showProCreators) {
-          loadProCreators();
-        }
+        setAdminNote('');
+        if (showProCreators) loadProCreators();
       } else {
         setError(result.error || 'Failed to update Pro status');
       }
-    } catch (err) {
+    } catch {
       setError('Update failed. Please try again.');
     } finally {
       setIsUpdating(false);
@@ -128,7 +132,7 @@ export const AdminProPanel: React.FC<AdminProPanelProps> = ({
       } else {
         setError(result.error || 'Failed to load Pro creators');
       }
-    } catch (err) {
+    } catch {
       setError('Failed to load Pro creators');
     } finally {
       setIsLoadingProCreators(false);
@@ -142,7 +146,12 @@ export const AdminProPanel: React.FC<AdminProPanelProps> = ({
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="adminProPanelTitle"
+    >
       <div className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="glass-card p-6">
           {/* Header */}
@@ -152,13 +161,16 @@ export const AdminProPanel: React.FC<AdminProPanelProps> = ({
                 <Shield className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-primary">Admin Pro Panel</h2>
+                <h2 id="adminProPanelTitle" className="text-2xl font-bold text-primary">
+                  Admin Pro Panel
+                </h2>
                 <p className="text-secondary text-sm">Manage Pro status for creators</p>
               </div>
             </div>
             {onClose && (
               <button
                 onClick={onClose}
+                aria-label="Close admin panel"
                 className="p-2 hover:bg-slate-700/50 rounded-lg transition-colors"
               >
                 <X className="w-5 h-5 text-slate-400" />
@@ -189,6 +201,7 @@ export const AdminProPanel: React.FC<AdminProPanelProps> = ({
               <div className="flex space-x-3">
                 <input
                   type="text"
+                  aria-label="Wallet address"
                   value={searchWallet}
                   onChange={(e) => setSearchWallet(e.target.value)}
                   placeholder="Enter wallet address..."
@@ -198,6 +211,7 @@ export const AdminProPanel: React.FC<AdminProPanelProps> = ({
                 <button
                   onClick={handleSearch}
                   disabled={isSearching}
+                  aria-label="Search creator"
                   className="px-6 py-3 btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSearching ? (
@@ -219,6 +233,12 @@ export const AdminProPanel: React.FC<AdminProPanelProps> = ({
                       <p className="text-sm text-secondary">
                         {searchResult.creatorExists ? 'Creator exists' : 'Creator not found in database'}
                       </p>
+                      {searchResult.name && (
+                        <p className="text-sm text-secondary">Name: {searchResult.name}</p>
+                      )}
+                      {searchResult.email && (
+                        <p className="text-sm text-secondary">Email: {searchResult.email}</p>
+                      )}
                     </div>
                     <div className={`flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium ${
                       searchResult.isPro 
@@ -232,10 +252,11 @@ export const AdminProPanel: React.FC<AdminProPanelProps> = ({
 
                   {/* Admin Note Input */}
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-secondary mb-2">
+                    <label htmlFor="adminNote" className="block text-sm font-medium text-secondary mb-2">
                       Admin Note (optional)
                     </label>
                     <input
+                      id="adminNote"
                       type="text"
                       value={adminNote}
                       onChange={(e) => setAdminNote(e.target.value)}
@@ -250,6 +271,7 @@ export const AdminProPanel: React.FC<AdminProPanelProps> = ({
                     <button
                       onClick={() => handleUpdateProStatus(true)}
                       disabled={isUpdating || searchResult.isPro}
+                      aria-label="Grant Pro status"
                       className="flex-1 flex items-center justify-center space-x-2 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Check className="w-5 h-5" />
@@ -259,6 +281,7 @@ export const AdminProPanel: React.FC<AdminProPanelProps> = ({
                     <button
                       onClick={() => handleUpdateProStatus(false)}
                       disabled={isUpdating || !searchResult.isPro}
+                      aria-label="Revoke Pro status"
                       className="flex-1 flex items-center justify-center space-x-2 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <X className="w-5 h-5" />
@@ -305,6 +328,8 @@ export const AdminProPanel: React.FC<AdminProPanelProps> = ({
               </h3>
               <button
                 onClick={() => setShowProCreators(!showProCreators)}
+                aria-pressed={showProCreators}
+                aria-label={showProCreators ? "Hide Pro creators" : "Show Pro creators"}
                 className="flex items-center space-x-2 px-4 py-2 bg-slate-700/50 hover:bg-slate-600/50 rounded-lg transition-colors"
               >
                 {showProCreators ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -328,10 +353,13 @@ export const AdminProPanel: React.FC<AdminProPanelProps> = ({
                       >
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="font-medium text-primary">{creator.name}</p>
+                            <p className="font-medium text-primary">{creator.name ?? 'Unnamed Creator'}</p>
                             <p className="text-sm text-secondary">
                               {formatWalletAddress(creator.id)}
                             </p>
+                            {creator.email && (
+                              <p className="text-xs text-muted">{creator.email}</p>
+                            )}
                             <p className="text-xs text-muted">
                               Created: {new Date(creator.created_at).toLocaleDateString()}
                             </p>
@@ -356,7 +384,7 @@ export const AdminProPanel: React.FC<AdminProPanelProps> = ({
 
           {/* Error Display */}
           {error && (
-            <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-300 text-sm backdrop-blur-sm">
+            <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-300 text-sm backdrop-blur-sm" role="alert">
               <div className="flex items-center space-x-2">
                 <AlertTriangle className="w-4 h-4" />
                 <span>{error}</span>
