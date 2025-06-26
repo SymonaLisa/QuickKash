@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { WalletConnector } from './components/WalletConnector';
 import { CreatorSetup } from './components/CreatorSetup';
@@ -15,11 +15,33 @@ import { CreatorMetadata } from './utils/localStorage';
 
 type AppState = 'wallet-connection' | 'creator-setup' | 'tip-jar-created';
 
+// Custom hook for persisted state in localStorage
+function usePersistedState<T>(key: string, defaultValue: T) {
+  const [state, setState] = useState<T>(() => {
+    try {
+      const stored = localStorage.getItem(key);
+      return stored ? (JSON.parse(stored) as T) : defaultValue;
+    } catch {
+      return defaultValue;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(key, JSON.stringify(state));
+    } catch {
+      // Fail silently
+    }
+  }, [key, state]);
+
+  return [state, setState] as const;
+}
+
 function CreateTipJar() {
-  const [currentState, setCurrentState] = useState<AppState>('wallet-connection');
-  const [walletConnection, setWalletConnection] = useState<WalletConnection | null>(null);
-  const [creatorMetadata, setCreatorMetadata] = useState<CreatorMetadata | null>(null);
-  const [storageId, setStorageId] = useState<string>('');
+  const [currentState, setCurrentState] = usePersistedState<AppState>('tipJarAppState', 'wallet-connection');
+  const [walletConnection, setWalletConnection] = usePersistedState<WalletConnection | null>('tipJarWalletConn', null);
+  const [creatorMetadata, setCreatorMetadata] = usePersistedState<CreatorMetadata | null>('tipJarCreatorMeta', null);
+  const [storageId, setStorageId] = usePersistedState<string>('tipJarStorageId', '');
 
   const handleWalletConnected = (connection: WalletConnection) => {
     setWalletConnection(connection);
@@ -54,13 +76,14 @@ function CreateTipJar() {
     );
   }
 
-  return null;
+  // Fallback UI for unexpected state
+  return <div className="p-4 text-center">Loading...</div>;
 }
 
 function App() {
   return (
     <Router>
-      <div className="relative">
+      <div className="relative min-h-screen">
         <Routes>
           <Route path="/" element={<CreateTipJar />} />
           <Route path="/home" element={<HomePage />} />
@@ -70,8 +93,11 @@ function App() {
           <Route path="/dashboard" element={<CreatorDashboard />} />
           {/* Shortlink redirect route */}
           <Route path="/@:slug" element={<ShortlinkRedirect />} />
+
+          {/* Catch-all 404 page */}
+          <Route path="*" element={<div className="p-8 text-center text-red-600 font-semibold">404 - Page Not Found</div>} />
         </Routes>
-        
+
         {/* Admin Access Trigger */}
         <AdminTrigger className="fixed top-4 right-4" />
       </div>
