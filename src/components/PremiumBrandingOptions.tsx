@@ -16,9 +16,9 @@ export interface BrandingSettings {
   accentColor: string;
 }
 
-export const PremiumBrandingOptions: React.FC<PremiumBrandingOptionsProps> = ({ 
-  walletAddress, 
-  onBrandingChange 
+export const PremiumBrandingOptions: React.FC<PremiumBrandingOptionsProps> = ({
+  walletAddress,
+  onBrandingChange,
 }) => {
   const [isPro, setIsPro] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -31,7 +31,7 @@ export const PremiumBrandingOptions: React.FC<PremiumBrandingOptionsProps> = ({
   }>({
     isPro: false,
     isManualPro: false,
-    hasActiveSubscription: false
+    hasActiveSubscription: false,
   });
   const [branding, setBranding] = useState<BrandingSettings>({
     primaryColor: '#10b981',
@@ -39,12 +39,14 @@ export const PremiumBrandingOptions: React.FC<PremiumBrandingOptionsProps> = ({
     accentColor: '#f59e0b',
     logoUrl: '',
     customFont: 'Inter',
-    brandName: ''
+    brandName: '',
   });
 
   useEffect(() => {
+    if (!walletAddress) return;
     checkProStatus();
     loadSavedBranding();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [walletAddress]);
 
   const checkProStatus = async () => {
@@ -56,6 +58,11 @@ export const PremiumBrandingOptions: React.FC<PremiumBrandingOptionsProps> = ({
     } catch (error) {
       console.error('Failed to check Pro status:', error);
       setIsPro(false);
+      setProStatusDetails({
+        isPro: false,
+        isManualPro: false,
+        hasActiveSubscription: false,
+      });
     } finally {
       setLoading(false);
     }
@@ -75,7 +82,7 @@ export const PremiumBrandingOptions: React.FC<PremiumBrandingOptionsProps> = ({
   const handleBrandingUpdate = (updates: Partial<BrandingSettings>) => {
     const newBranding = { ...branding, ...updates };
     setBranding(newBranding);
-    
+
     if (onBrandingChange) {
       onBrandingChange(newBranding);
     }
@@ -85,7 +92,7 @@ export const PremiumBrandingOptions: React.FC<PremiumBrandingOptionsProps> = ({
     setSaving(true);
     try {
       localStorage.setItem(`branding_${walletAddress}`, JSON.stringify(branding));
-      
+
       if (onBrandingChange) {
         onBrandingChange(branding);
       }
@@ -102,7 +109,7 @@ export const PremiumBrandingOptions: React.FC<PremiumBrandingOptionsProps> = ({
     { name: 'Purple', primary: '#8b5cf6', secondary: '#a855f7', accent: '#ec4899' },
     { name: 'Rose', primary: '#f43f5e', secondary: '#e11d48', accent: '#f97316' },
     { name: 'Amber', primary: '#f59e0b', secondary: '#eab308', accent: '#10b981' },
-    { name: 'Teal', primary: '#14b8a6', secondary: '#06b6d4', accent: '#6366f1' }
+    { name: 'Teal', primary: '#14b8a6', secondary: '#06b6d4', accent: '#6366f1' },
   ];
 
   const fontOptions = [
@@ -113,7 +120,7 @@ export const PremiumBrandingOptions: React.FC<PremiumBrandingOptionsProps> = ({
     'Montserrat',
     'Poppins',
     'Source Sans Pro',
-    'Nunito'
+    'Nunito',
   ];
 
   if (loading) {
@@ -139,18 +146,16 @@ export const PremiumBrandingOptions: React.FC<PremiumBrandingOptionsProps> = ({
           </div>
           <h3 className="text-xl font-bold text-primary mb-2">Premium Branding</h3>
           <p className="text-secondary mb-4">
-            Customize your tip jar's appearance with premium branding options
+            Customize your tip jar&apos;s appearance with premium branding options
           </p>
           <div className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 rounded-xl p-4 mb-4 backdrop-blur-sm">
             <div className="flex items-center justify-center mb-2">
               <Crown className="w-5 h-5 text-emerald-400 mr-2" />
               <span className="font-semibold text-emerald-300">Pro Feature</span>
             </div>
-            <p className="text-sm text-emerald-200">
-              Upgrade to Pro by contacting support
-            </p>
+            <p className="text-sm text-emerald-200">Upgrade to Pro by contacting support</p>
           </div>
-          <button className="btn-primary px-6 py-2">
+          <button type="button" className="btn-primary px-6 py-2" title="Contact Support">
             Contact Support
           </button>
         </div>
@@ -181,11 +186,12 @@ export const PremiumBrandingOptions: React.FC<PremiumBrandingOptionsProps> = ({
       <div className="space-y-6">
         {/* Brand Name */}
         <div>
-          <label className="block text-sm font-medium text-secondary mb-2">
+          <label htmlFor="brandName" className="block text-sm font-medium text-secondary mb-2">
             <Type className="w-4 h-4 inline mr-2" />
             Brand Name
           </label>
           <input
+            id="brandName"
             type="text"
             value={branding.brandName}
             onChange={(e) => handleBrandingUpdate({ brandName: e.target.value })}
@@ -197,11 +203,12 @@ export const PremiumBrandingOptions: React.FC<PremiumBrandingOptionsProps> = ({
 
         {/* Logo URL */}
         <div>
-          <label className="block text-sm font-medium text-secondary mb-2">
+          <label htmlFor="logoUrl" className="block text-sm font-medium text-secondary mb-2">
             <Image className="w-4 h-4 inline mr-2" />
             Logo URL
           </label>
           <input
+            id="logoUrl"
             type="url"
             value={branding.logoUrl}
             onChange={(e) => handleBrandingUpdate({ logoUrl: e.target.value })}
@@ -212,37 +219,30 @@ export const PremiumBrandingOptions: React.FC<PremiumBrandingOptionsProps> = ({
 
         {/* Color Presets */}
         <div>
-          <label className="block text-sm font-medium text-secondary mb-3">
-            Color Presets
-          </label>
+          <label className="block text-sm font-medium text-secondary mb-3">Color Presets</label>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {colorPresets.map((preset) => (
               <button
                 key={preset.name}
-                onClick={() => handleBrandingUpdate({
-                  primaryColor: preset.primary,
-                  secondaryColor: preset.secondary,
-                  accentColor: preset.accent
-                })}
+                type="button"
+                onClick={() =>
+                  handleBrandingUpdate({
+                    primaryColor: preset.primary,
+                    secondaryColor: preset.secondary,
+                    accentColor: preset.accent,
+                  })
+                }
                 className={`p-3 rounded-xl border-2 transition-all duration-200 ${
                   branding.primaryColor === preset.primary
                     ? 'border-emerald-500 bg-emerald-500/10'
                     : 'border-slate-600 hover:border-slate-500 bg-slate-700/30'
                 }`}
+                title={`Select ${preset.name} color preset`}
               >
                 <div className="flex items-center space-x-2 mb-2">
-                  <div 
-                    className="w-4 h-4 rounded-full" 
-                    style={{ backgroundColor: preset.primary }}
-                  ></div>
-                  <div 
-                    className="w-4 h-4 rounded-full" 
-                    style={{ backgroundColor: preset.secondary }}
-                  ></div>
-                  <div 
-                    className="w-4 h-4 rounded-full" 
-                    style={{ backgroundColor: preset.accent }}
-                  ></div>
+                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: preset.primary }} />
+                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: preset.secondary }} />
+                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: preset.accent }} />
                 </div>
                 <span className="text-sm font-medium text-slate-300">{preset.name}</span>
               </button>
@@ -253,15 +253,17 @@ export const PremiumBrandingOptions: React.FC<PremiumBrandingOptionsProps> = ({
         {/* Custom Colors */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-secondary mb-2">
+            <label className="block text-sm font-medium text-secondary mb-2" htmlFor="primaryColor">
               Primary Color
             </label>
             <div className="flex items-center space-x-2">
               <input
+                id="primaryColor"
                 type="color"
                 value={branding.primaryColor}
                 onChange={(e) => handleBrandingUpdate({ primaryColor: e.target.value })}
                 className="w-12 h-10 rounded-lg border border-slate-600 bg-slate-700"
+                title="Choose Primary Color"
               />
               <input
                 type="text"
@@ -269,20 +271,23 @@ export const PremiumBrandingOptions: React.FC<PremiumBrandingOptionsProps> = ({
                 onChange={(e) => handleBrandingUpdate({ primaryColor: e.target.value })}
                 className="input-field flex-1 text-sm"
                 placeholder="#10b981"
+                aria-label="Primary Color Hex"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-secondary mb-2">
+            <label className="block text-sm font-medium text-secondary mb-2" htmlFor="secondaryColor">
               Secondary Color
             </label>
             <div className="flex items-center space-x-2">
               <input
+                id="secondaryColor"
                 type="color"
                 value={branding.secondaryColor}
                 onChange={(e) => handleBrandingUpdate({ secondaryColor: e.target.value })}
                 className="w-12 h-10 rounded-lg border border-slate-600 bg-slate-700"
+                title="Choose Secondary Color"
               />
               <input
                 type="text"
@@ -290,20 +295,23 @@ export const PremiumBrandingOptions: React.FC<PremiumBrandingOptionsProps> = ({
                 onChange={(e) => handleBrandingUpdate({ secondaryColor: e.target.value })}
                 className="input-field flex-1 text-sm"
                 placeholder="#14b8a6"
+                aria-label="Secondary Color Hex"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-secondary mb-2">
+            <label className="block text-sm font-medium text-secondary mb-2" htmlFor="accentColor">
               Accent Color
             </label>
             <div className="flex items-center space-x-2">
               <input
+                id="accentColor"
                 type="color"
                 value={branding.accentColor}
                 onChange={(e) => handleBrandingUpdate({ accentColor: e.target.value })}
                 className="w-12 h-10 rounded-lg border border-slate-600 bg-slate-700"
+                title="Choose Accent Color"
               />
               <input
                 type="text"
@@ -311,6 +319,7 @@ export const PremiumBrandingOptions: React.FC<PremiumBrandingOptionsProps> = ({
                 onChange={(e) => handleBrandingUpdate({ accentColor: e.target.value })}
                 className="input-field flex-1 text-sm"
                 placeholder="#f59e0b"
+                aria-label="Accent Color Hex"
               />
             </div>
           </div>
@@ -318,13 +327,15 @@ export const PremiumBrandingOptions: React.FC<PremiumBrandingOptionsProps> = ({
 
         {/* Font Selection */}
         <div>
-          <label className="block text-sm font-medium text-secondary mb-2">
+          <label className="block text-sm font-medium text-secondary mb-2" htmlFor="customFont">
             Custom Font
           </label>
           <select
+            id="customFont"
             value={branding.customFont}
             onChange={(e) => handleBrandingUpdate({ customFont: e.target.value })}
             className="input-field"
+            title="Select Custom Font"
           >
             {fontOptions.map((font) => (
               <option key={font} value={font}>
@@ -340,26 +351,26 @@ export const PremiumBrandingOptions: React.FC<PremiumBrandingOptionsProps> = ({
             <Eye className="w-4 h-4 inline mr-2" />
             Preview
           </label>
-          <div 
+          <div
             className="p-6 rounded-xl border border-slate-600"
             style={{
-              background: `linear-gradient(135deg, ${branding.primaryColor}20, ${branding.secondaryColor}20)`,
-              borderColor: `${branding.primaryColor}40`,
-              fontFamily: branding.customFont
+              background: `linear-gradient(135deg, ${branding.primaryColor}33, ${branding.secondaryColor}33)`,
+              borderColor: `${branding.primaryColor}66`,
+              fontFamily: branding.customFont,
             }}
           >
             <div className="flex items-center space-x-3 mb-4">
               {branding.logoUrl ? (
-                <img 
-                  src={branding.logoUrl} 
-                  alt="Logo" 
+                <img
+                  src={branding.logoUrl}
+                  alt={`${branding.brandName || 'Logo'} logo`}
                   className="w-12 h-12 rounded-lg object-cover"
                   onError={(e) => {
-                    e.currentTarget.style.display = 'none';
+                    (e.currentTarget as HTMLImageElement).style.display = 'none';
                   }}
                 />
               ) : (
-                <div 
+                <div
                   className="w-12 h-12 rounded-lg flex items-center justify-center"
                   style={{ backgroundColor: branding.primaryColor }}
                 >
@@ -367,32 +378,31 @@ export const PremiumBrandingOptions: React.FC<PremiumBrandingOptionsProps> = ({
                 </div>
               )}
               <div>
-                <h4 
-                  className="font-bold text-lg"
-                  style={{ color: branding.primaryColor }}
-                >
+                <h4 className="font-bold text-lg" style={{ color: branding.primaryColor }}>
                   {branding.brandName || 'Your Brand'}
                 </h4>
                 <p className="text-sm text-slate-400">Tip Jar Preview</p>
               </div>
             </div>
-            
-            <button 
+
+            <button
+              type="button"
               className="w-full py-3 rounded-xl font-semibold text-white transition-all duration-200"
-              style={{ 
-                background: `linear-gradient(135deg, ${branding.primaryColor}, ${branding.secondaryColor})` 
+              style={{
+                background: `linear-gradient(135deg, ${branding.primaryColor}, ${branding.secondaryColor})`,
               }}
+              title="Send Tip"
             >
               Send Tip
             </button>
-            
+
             <div className="mt-3 flex justify-center">
-              <span 
+              <span
                 className="text-sm font-medium px-3 py-1 rounded-full"
-                style={{ 
-                  backgroundColor: `${branding.accentColor}20`,
+                style={{
+                  backgroundColor: `${branding.accentColor}33`,
                   color: branding.accentColor,
-                  border: `1px solid ${branding.accentColor}40`
+                  border: `1px solid ${branding.accentColor}66`,
                 }}
               >
                 Premium Feature
@@ -404,9 +414,11 @@ export const PremiumBrandingOptions: React.FC<PremiumBrandingOptionsProps> = ({
         {/* Save Button */}
         <div className="flex space-x-3">
           <button
+            type="button"
             onClick={saveBranding}
             disabled={saving}
             className="flex-1 flex items-center justify-center space-x-2 py-3 btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Save Branding Settings"
           >
             <Save className="w-5 h-5" />
             <span>{saving ? 'Saving...' : 'Save Branding'}</span>
@@ -415,7 +427,7 @@ export const PremiumBrandingOptions: React.FC<PremiumBrandingOptionsProps> = ({
 
         {/* Pro Status Info */}
         {proStatusDetails.isManualPro && (
-          <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 backdrop-blur-sm">
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 backdrop-blur-sm mt-4">
             <p className="text-blue-300 text-sm font-medium">
               ℹ️ Pro access manually enabled for this account
             </p>
