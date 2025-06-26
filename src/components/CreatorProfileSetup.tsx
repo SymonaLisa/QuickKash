@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Mail, Image, FileText, Save, Loader2, CheckCircle } from 'lucide-react';
+import { User, Mail, Image, FileText, Save, Loader2 } from 'lucide-react';
 import { supabaseManager } from '../utils/supabase';
 
 interface CreatorProfileSetupProps {
@@ -27,40 +27,40 @@ export const CreatorProfileSetup: React.FC<CreatorProfileSetupProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const isValidUrl = (string: string) => {
+    try {
+      new URL(string);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.name.trim()) {
       newErrors.name = 'Name is required';
     }
-    
+
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address';
     }
-    
+
     if (!formData.bio.trim()) {
       newErrors.bio = 'Bio is required';
     } else if (formData.bio.length > 500) {
       newErrors.bio = 'Bio must be 500 characters or less';
     }
-    
+
     if (formData.profileImageUrl && !isValidUrl(formData.profileImageUrl)) {
       newErrors.profileImageUrl = 'Please enter a valid URL';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
-
-  const isValidUrl = (string: string) => {
-    try {
-      new URL(string);
-      return true;
-    } catch (_) {
-      return false;
-    }
   };
 
   const handleInputChange = (field: keyof ProfileFormData, value: string) => {
@@ -72,16 +72,16 @@ export const CreatorProfileSetup: React.FC<CreatorProfileSetupProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     setIsSubmitting(true);
-    
+
     try {
       const result = await supabaseManager.createOrUpdateCreator(walletAddress, {
         name: formData.name.trim(),
         email: formData.email.trim(),
-        paypal_username: walletAddress, // Use wallet address as PayPal username placeholder
+        paypal_username: walletAddress, // Using wallet address as placeholder for PayPal username
         bio: formData.bio.trim(),
         profile_image_url: formData.profileImageUrl.trim() || undefined
       });
@@ -109,7 +109,7 @@ export const CreatorProfileSetup: React.FC<CreatorProfileSetupProps> = ({
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/20 via-slate-900 to-slate-900"></div>
-      
+
       <div className="max-w-2xl w-full relative z-10">
         <div className="glass-card p-8">
           <div className="text-center mb-8">
@@ -140,7 +140,7 @@ export const CreatorProfileSetup: React.FC<CreatorProfileSetupProps> = ({
               <input
                 type="text"
                 value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
+                onChange={e => handleInputChange('name', e.target.value)}
                 className={`input-field ${
                   errors.name ? 'border-red-400 focus:border-red-400 focus:ring-red-400' : ''
                 }`}
@@ -160,7 +160,7 @@ export const CreatorProfileSetup: React.FC<CreatorProfileSetupProps> = ({
               <input
                 type="email"
                 value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
+                onChange={e => handleInputChange('email', e.target.value)}
                 className={`input-field ${
                   errors.email ? 'border-red-400 focus:border-red-400 focus:ring-red-400' : ''
                 }`}
@@ -178,7 +178,7 @@ export const CreatorProfileSetup: React.FC<CreatorProfileSetupProps> = ({
               </label>
               <textarea
                 value={formData.bio}
-                onChange={(e) => handleInputChange('bio', e.target.value)}
+                onChange={e => handleInputChange('bio', e.target.value)}
                 className={`input-field resize-none ${
                   errors.bio ? 'border-red-400 focus:border-red-400 focus:ring-red-400' : ''
                 }`}
@@ -199,7 +199,7 @@ export const CreatorProfileSetup: React.FC<CreatorProfileSetupProps> = ({
               <input
                 type="url"
                 value={formData.profileImageUrl}
-                onChange={(e) => handleInputChange('profileImageUrl', e.target.value)}
+                onChange={e => handleInputChange('profileImageUrl', e.target.value)}
                 className={`input-field ${
                   errors.profileImageUrl ? 'border-red-400 focus:border-red-400 focus:ring-red-400' : ''
                 }`}
