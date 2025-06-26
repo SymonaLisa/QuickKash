@@ -8,22 +8,28 @@ export interface TipLogData {
   note?: string;
 }
 
+export interface LogTipResult {
+  success: boolean;
+  data?: any;
+  error?: any;
+}
+
 export const logTip = async ({
   wallet,
   amount,
   tx_id,
   creator_address,
-  note
-}: TipLogData) => {
+  note,
+}: TipLogData): Promise<LogTipResult> => {
   try {
     const { data, error } = await supabase.from('tips').insert({
       tipper_address: wallet,
-      creator_address: creator_address || wallet, // Use wallet as creator if not specified
+      creator_address: creator_address || wallet, // fallback creator address
       amount,
       transaction_id: tx_id,
       note,
       premium_unlocked: amount >= 10,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     if (error) {
@@ -39,17 +45,17 @@ export const logTip = async ({
   }
 };
 
-// Legacy function for backward compatibility
-export const logTipSimple = async (wallet: string, amount: number) => {
+// Legacy simple logger for backward compatibility
+export const logTipSimple = async (wallet: string, amount: number): Promise<void> => {
   const { data, error } = await supabase.from('tips').insert([
-    { 
+    {
       creator_address: wallet,
-      tipper_address: 'anonymous', // Default for simple logging
-      amount: amount,
-      transaction_id: `tip_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // Generate unique ID
+      tipper_address: 'anonymous',
+      amount,
+      transaction_id: `tip_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`, // substring instead of substr
       premium_unlocked: amount >= 10,
-      timestamp: new Date().toISOString()
-    }
+      timestamp: new Date().toISOString(),
+    },
   ]);
 
   if (error) {
