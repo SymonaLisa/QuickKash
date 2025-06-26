@@ -74,7 +74,8 @@ export const HomePage: React.FC = () => {
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
                 <button
-                  onClick={() => navigate('/')}
+                  onClick={() => navigate('/setup')}
+                  aria-label="Create your tip jar"
                   className="flex items-center justify-center space-x-2 px-8 py-4 btn-primary text-lg font-semibold group"
                 >
                   <span>Create Your Tip Jar</span>
@@ -83,6 +84,7 @@ export const HomePage: React.FC = () => {
                 
                 <button
                   onClick={() => navigate('/demo')}
+                  aria-label="View demo"
                   className="flex items-center justify-center space-x-2 px-8 py-4 btn-secondary text-lg font-semibold"
                 >
                   <span>View Demo</span>
@@ -92,13 +94,14 @@ export const HomePage: React.FC = () => {
 
               {/* Quick Links */}
               <div className="flex flex-wrap justify-center gap-4 text-sm">
-                <button
-                  onClick={() => navigate('/dashboard')}
+                <a
+                  href="/dashboard"
+                  aria-label="Go to Creator Dashboard"
                   className="flex items-center space-x-1 text-emerald-400 hover:text-emerald-300 transition-colors"
                 >
                   <span>Creator Dashboard</span>
                   <ExternalLink className="w-3 h-3" />
-                </button>
+                </a>
                 
                 <span className="text-slate-600">•</span>
                 
@@ -106,6 +109,7 @@ export const HomePage: React.FC = () => {
                   href="https://github.com/your-username/quickkash-tip-jar"
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label="Open source repository on GitHub"
                   className="flex items-center space-x-1 text-emerald-400 hover:text-emerald-300 transition-colors"
                 >
                   <span>Open Source</span>
