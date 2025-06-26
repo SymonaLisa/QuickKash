@@ -10,7 +10,11 @@ export interface CreatorMetadata {
 class LocalStorageManager {
   saveCreatorMetadata(metadata: CreatorMetadata): string {
     const id = `creator_${metadata.walletAddress}`;
-    localStorage.setItem(id, JSON.stringify(metadata));
+    try {
+      localStorage.setItem(id, JSON.stringify(metadata));
+    } catch (error) {
+      console.error('Failed to save creator metadata:', error);
+    }
     return id;
   }
 
@@ -26,12 +30,16 @@ class LocalStorageManager {
 
   getAllCreators(): CreatorMetadata[] {
     const creators: CreatorMetadata[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith('creator_')) {
-        const data = this.getCreatorMetadata(key);
-        if (data) creators.push(data);
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('creator_')) {
+          const data = this.getCreatorMetadata(key);
+          if (data) creators.push(data);
+        }
       }
+    } catch (error) {
+      console.error('Failed to retrieve all creators:', error);
     }
     return creators;
   }
