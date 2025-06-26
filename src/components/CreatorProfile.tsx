@@ -489,10 +489,11 @@ export const CreatorProfile: React.FC = () => {
 
           {/* Premium Content */}
           {showPremiumContent && (
-            <PremiumContentViewer 
-              creatorAddress={walletAddress!}
-              hasAccess={false} // This would be determined by checking if user has tipped 10+ ALGO
-            />
+           <PremiumContentViewer 
+  creatorAddress={walletAddress!}
+  hasAccess={tipStats.total >= 10}
+/>
+
           )}
 
           {/* Tip History */}
