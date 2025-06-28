@@ -101,18 +101,6 @@ export const Navigation: React.FC<NavigationProps> = ({
               <span className="hidden sm:inline">Super User</span>
             </div>
           )}
-
-          {/* External Links */}
-          <a
-            href="https://github.com/your-username/quickkash-tip-jar"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center space-x-1 px-3 py-2 text-slate-400 hover:text-slate-300 rounded-lg transition-colors"
-            title="View source code"
-          >
-            <ExternalLink className="w-4 h-4" />
-            <span className="hidden sm:inline text-sm">GitHub</span>
-          </a>
         </div>
       </div>
     </nav>
