@@ -44,13 +44,21 @@ class WalletManager {
       return { address: accounts[0].address, provider: 'MyAlgo Wallet' };
     } catch (error: any) {
       console.error('MyAlgo wallet connection failed:', error);
-      if (error instanceof Error) {
-        if (error.message.includes('User rejected')) throw new Error('Connection cancelled by user');
-        if (error.message.includes('not available'))
-          throw new Error('MyAlgo Wallet is not available. Check your internet connection and try again.');
-        throw new Error(`MyAlgo connection failed: ${error.message}`);
+      
+      // Safely extract error message
+      const errorMessage = error?.message || error?.toString() || 'Unknown error';
+      
+      if (errorMessage.includes('User rejected')) {
+        throw new Error('Connection cancelled by user');
       }
-      throw new Error('Failed to connect to MyAlgo Wallet. Please try again or use Pera Wallet instead.');
+      if (errorMessage.includes('not available')) {
+        throw new Error('MyAlgo Wallet is not available. Check your internet connection and try again.');
+      }
+      if (errorMessage.includes('blocked')) {
+        throw new Error('MyAlgo Wallet connection was blocked. Please check your browser settings and try again.');
+      }
+      
+      throw new Error(`MyAlgo connection failed: ${errorMessage}`);
     }
   }
 
