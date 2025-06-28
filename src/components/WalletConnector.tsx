@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Wallet, Shield, Zap, Sparkles, AlertTriangle, Users, Crown, TrendingUp, Globe, ArrowRight, ExternalLink } from 'lucide-react';
+import { Wallet, Shield, Zap, Sparkles, AlertTriangle, Users, Crown, TrendingUp, Globe, ArrowRight, ExternalLink, Eye, Palette, Share2 } from 'lucide-react';
 import { walletManager, WalletConnection } from '../utils/walletConnection';
 import { QuickKashLogo } from './QuickKashLogo';
 
