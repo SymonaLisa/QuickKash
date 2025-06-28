@@ -1,10 +1,11 @@
 import { supabase } from './supabase';
 import { isProWalletSimple } from './proWalletChecker';
+import { isSuperUser } from './devSuperUser';
 
 /**
- * Enhanced Pro status checker that combines predefined list and database checks
+ * Enhanced Pro status checker that combines predefined list, super user access, and database checks
  * @param walletAddress - The wallet address to check
- * @returns Promise<boolean> - true if is_pro is true OR in predefined list, false otherwise
+ * @returns Promise<boolean> - true if is_pro is true OR in predefined list OR is super user, false otherwise
  */
 export async function checkProStatus(walletAddress: string): Promise<boolean> {
   try {
@@ -14,7 +15,12 @@ export async function checkProStatus(walletAddress: string): Promise<boolean> {
       return false;
     }
 
-    // First check predefined Pro wallet list (faster)
+    // First check if user is a super user (highest priority)
+    if (isSuperUser(walletAddress)) {
+      return true;
+    }
+
+    // Then check predefined Pro wallet list (faster)
     const isInProList = await isProWalletSimple(walletAddress);
     if (isInProList) {
       return true;
@@ -69,6 +75,7 @@ export async function checkProStatusDetailed(walletAddress: string): Promise<{
   isManualPro: boolean;
   hasActiveSubscription: boolean;
   isInProList: boolean;
+  isSuperUser: boolean;
   subscriptionTier?: string;
   error?: string;
 }> {
@@ -79,9 +86,13 @@ export async function checkProStatusDetailed(walletAddress: string): Promise<{
         isManualPro: false,
         hasActiveSubscription: false,
         isInProList: false,
+        isSuperUser: false,
         error: 'Invalid wallet address'
       };
     }
+
+    // Check super user status
+    const isSuperUserStatus = isSuperUser(walletAddress);
 
     // Check predefined Pro wallet list
     const isInProList = await isProWalletSimple(walletAddress);
@@ -95,10 +106,11 @@ export async function checkProStatusDetailed(walletAddress: string): Promise<{
 
     if (error && error.code !== 'PGRST116') {
       return {
-        isPro: isInProList,
+        isPro: isSuperUserStatus || isInProList,
         isManualPro: false,
         hasActiveSubscription: false,
         isInProList,
+        isSuperUser: isSuperUserStatus,
         error: error.message
       };
     }
@@ -108,13 +120,14 @@ export async function checkProStatusDetailed(walletAddress: string): Promise<{
       (data?.subscription_tier === 'pro' || data?.subscription_tier === 'creator_plus') &&
       data?.subscription_status === 'active';
     
-    const isPro = isInProList || isManualPro || hasActiveSubscription;
+    const isPro = isSuperUserStatus || isInProList || isManualPro || hasActiveSubscription;
 
     return {
       isPro,
       isManualPro,
       hasActiveSubscription,
       isInProList,
+      isSuperUser: isSuperUserStatus,
       subscriptionTier: data?.subscription_tier
     };
 
@@ -125,6 +138,7 @@ export async function checkProStatusDetailed(walletAddress: string): Promise<{
       isManualPro: false,
       hasActiveSubscription: false,
       isInProList: false,
+      isSuperUser: false,
       error: 'Unexpected error occurred'
     };
   }

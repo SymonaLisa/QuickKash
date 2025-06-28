@@ -7,15 +7,22 @@ import {
   BarChart3, 
   Crown, 
   ExternalLink,
-  Zap
+  Zap,
+  Shield
 } from 'lucide-react';
 import { QuickKashLogo } from './QuickKashLogo';
 
 interface NavigationProps {
   className?: string;
+  showSuperUserIndicator?: boolean;
+  walletAddress?: string;
 }
 
-export const Navigation: React.FC<NavigationProps> = ({ className = '' }) => {
+export const Navigation: React.FC<NavigationProps> = ({ 
+  className = '', 
+  showSuperUserIndicator = false,
+  walletAddress 
+}) => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -85,8 +92,17 @@ export const Navigation: React.FC<NavigationProps> = ({ className = '' }) => {
           })}
         </div>
 
-        {/* External Links */}
+        {/* Right Side */}
         <div className="flex items-center space-x-2">
+          {/* Super User Indicator */}
+          {showSuperUserIndicator && walletAddress && (
+            <div className="flex items-center space-x-1 px-3 py-1 bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-500/30 rounded-full text-red-300 text-sm font-medium">
+              <Shield className="w-4 h-4" />
+              <span className="hidden sm:inline">Super User</span>
+            </div>
+          )}
+
+          {/* External Links */}
           <a
             href="https://github.com/your-username/quickkash-tip-jar"
             target="_blank"
