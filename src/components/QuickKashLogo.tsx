@@ -34,15 +34,23 @@ export const QuickKashLogo: React.FC<QuickKashLogoProps> = ({
           </div>
         </div>
       )}
-      <span
-        className={`${sizeClasses[size]} font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-emerald-300 to-teal-400 select-none drop-shadow-sm`}
-        style={{
-          textShadow: '0 0 20px rgba(16, 185, 129, 0.3)',
-          filter: 'brightness(1.1) contrast(1.1)'
-        }}
-      >
-        QuickKash
-      </span>
+      <div className="relative">
+        {/* Background for better contrast */}
+        <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm rounded-lg px-2 py-1 border border-emerald-500/30"></div>
+        
+        {/* Main text with enhanced visibility */}
+        <span
+          className={`${sizeClasses[size]} font-bold text-white relative z-10 px-2 py-1 select-none`}
+          style={{
+            textShadow: '0 0 10px rgba(16, 185, 129, 0.8), 0 2px 4px rgba(0, 0, 0, 0.8)',
+            filter: 'brightness(1.2) contrast(1.2)'
+          }}
+        >
+          <span className="bg-gradient-to-r from-emerald-300 via-emerald-200 to-teal-300 bg-clip-text text-transparent">
+            QuickKash
+          </span>
+        </span>
+      </div>
     </div>
   );
 };
