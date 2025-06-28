@@ -1,5 +1,4 @@
 import { PeraWalletConnect } from '@perawallet/connect';
-import MyAlgoConnect from '@randlabs/myalgo-connect';
 import algosdk from 'algosdk';
 import { Buffer } from 'buffer';  // Added for browser Buffer support
 
@@ -15,12 +14,10 @@ export interface WalletConnection {
 
 class WalletManager {
   private peraWallet: PeraWalletConnect;
-  private myAlgoWallet: MyAlgoConnect;
   private algodClient: algosdk.Algodv2;
 
   constructor() {
     this.peraWallet = new PeraWalletConnect({ shouldShowSignTxnToast: false });
-    this.myAlgoWallet = new MyAlgoConnect();
 
     const algodToken = import.meta.env.VITE_ALGOD_TOKEN || '98D9CE80660AD243893D56D9F125CD2D';
     this.algodClient = new algosdk.Algodv2(algodToken, 'https://mainnet-api.4160.nodely.io', '');
@@ -38,28 +35,7 @@ class WalletManager {
   }
 
   async connectMyAlgo(): Promise<WalletConnection> {
-    try {
-      const accounts = await this.myAlgoWallet.connect();
-      if (accounts.length === 0) throw new Error('No accounts found in MyAlgo Wallet');
-      return { address: accounts[0].address, provider: 'MyAlgo Wallet' };
-    } catch (error: any) {
-      console.error('MyAlgo wallet connection failed:', error);
-      
-      // Convert error to string at the beginning for reliable string operations
-      const errorString = String(error?.message || error || 'Unknown error');
-      
-      if (errorString.includes('User rejected')) {
-        throw new Error('Connection cancelled by user');
-      }
-      if (errorString.includes('not available')) {
-        throw new Error('MyAlgo Wallet is not available. Check your internet connection and try again.');
-      }
-      if (errorString.includes('blocked')) {
-        throw new Error('MyAlgo Wallet connection was blocked. Please check your browser settings and try again.');
-      }
-      
-      throw new Error(`MyAlgo connection failed: ${errorString}`);
-    }
+    throw new Error('MyAlgo Wallet is no longer available. Please use Pera Wallet instead.');
   }
 
   disconnectPera(): void {
@@ -67,15 +43,15 @@ class WalletManager {
   }
 
   isMyAlgoAvailable(): boolean {
-    return typeof window !== 'undefined' && !!window?.MyAlgoWallet;
+    return false; // MyAlgo is no longer available
   }
 
   isPeraAvailable(): boolean {
     return typeof window !== 'undefined' && !!window?.pera;
   }
 
-  getMyAlgoInstance(): MyAlgoConnect {
-    return this.myAlgoWallet;
+  getMyAlgoInstance(): any {
+    throw new Error('MyAlgo Wallet is no longer available');
   }
 
   getPeraInstance(): PeraWalletConnect {
@@ -180,6 +156,10 @@ export const signAndSendTipWithWallet = async ({
 }) => {
   const client = algodClient || walletManager.getAlgodClient();
 
+  if (walletType === 'myalgo') {
+    throw new Error('MyAlgo Wallet is no longer available. Please use Pera Wallet instead.');
+  }
+
   try {
     const params = await client.getTransactionParams().do();
 
@@ -210,22 +190,11 @@ export const signAndSendTipWithWallet = async ({
     txn1.group = groupId;
     txn2.group = groupId;
 
-    let signedTxns;
-
-    if (walletType === 'pera') {
-      const peraWallet = walletManager.getPeraInstance();
-      signedTxns = await peraWallet.signTransaction([
-        { txn: txn1, signers: [sender] },
-        { txn: txn2, signers: [sender] },
-      ]);
-    } else if (walletType === 'myalgo') {
-      const myAlgoWallet = walletManager.getMyAlgoInstance();
-      const txnBytes = [txn1.toByte(), txn2.toByte()];
-      const signedTxnArray = await myAlgoWallet.signTransaction(txnBytes);
-      signedTxns = signedTxnArray.map((signed: any) => signed.blob);
-    } else {
-      throw new Error('Unsupported wallet type');
-    }
+    const peraWallet = walletManager.getPeraInstance();
+    const signedTxns = await peraWallet.signTransaction([
+      { txn: txn1, signers: [sender] },
+      { txn: txn2, signers: [sender] },
+    ]);
 
     const { txId } = await client.sendRawTransaction(signedTxns).do();
 

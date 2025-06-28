@@ -13,19 +13,12 @@ export const WalletConnector: React.FC<WalletConnectorProps> = ({ onWalletConnec
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleWalletConnect = async (walletType: 'pera' | 'myalgo') => {
+  const handleWalletConnect = async (walletType: 'pera') => {
     setIsConnecting(true);
     setError(null);
 
     try {
-      let connection: WalletConnection;
-      
-      if (walletType === 'pera') {
-        connection = await walletManager.connectPera();
-      } else {
-        connection = await walletManager.connectMyAlgo();
-      }
-      
+      const connection = await walletManager.connectPera();
       onWalletConnected(connection);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Connection failed');
@@ -137,7 +130,7 @@ export const WalletConnector: React.FC<WalletConnectorProps> = ({ onWalletConnec
                 Ready to Start Receiving Tips?
               </h2>
               <p className="text-secondary mb-6">
-                Connect your Algorand wallet to create your personalized tip jar in minutes
+                Connect your Pera Wallet to create your personalized tip jar in minutes
               </p>
 
               {error && (
@@ -165,17 +158,15 @@ export const WalletConnector: React.FC<WalletConnectorProps> = ({ onWalletConnec
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </button>
 
-                <button
-                  onClick={() => handleWalletConnect('myalgo')}
-                  disabled={isConnecting}
-                  className="w-full flex items-center justify-center space-x-3 p-4 btn-secondary disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none group"
-                >
-                  <Zap className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                  <span className="font-semibold">
-                    {isConnecting ? 'Connecting...' : 'Connect with MyAlgo'}
-                  </span>
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </button>
+                <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl text-yellow-300 text-sm backdrop-blur-sm">
+                  <div className="flex items-start space-x-2">
+                    <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium mb-1">MyAlgo Wallet Discontinued</p>
+                      <p>MyAlgo Wallet is no longer available. Please use Pera Wallet for the best experience.</p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="mt-6 pt-6 border-t border-slate-700">
@@ -223,9 +214,9 @@ export const WalletConnector: React.FC<WalletConnectorProps> = ({ onWalletConnec
                 <div className="w-20 h-20 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold text-white">
                   1
                 </div>
-                <h3 className="text-xl font-bold text-primary mb-3">Connect Wallet</h3>
+                <h3 className="text-xl font-bold text-primary mb-3">Connect Pera Wallet</h3>
                 <p className="text-secondary">
-                  Connect your Pera or MyAlgo wallet to get started. Your wallet address becomes your unique creator ID.
+                  Connect your Pera Wallet to get started. Your wallet address becomes your unique creator ID.
                 </p>
               </div>
 
