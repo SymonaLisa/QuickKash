@@ -362,12 +362,29 @@ export const WalletConnector: React.FC<WalletConnectorProps> = ({ onWalletConnec
             <p className="text-secondary mb-4">
               Empowering creators with decentralized monetization on Algorand
             </p>
-            <div className="flex justify-center space-x-6 text-sm text-muted">
+            <div className="flex justify-center space-x-6 text-sm text-muted mb-6">
               <span>Built with ❤️ for creators</span>
               <span>•</span>
               <span>Powered by Algorand</span>
               <span>•</span>
               <span>Open Source</span>
+            </div>
+
+            {/* Bolt Badge */}
+            <div className="flex justify-center">
+              <a
+                href="https://bolt.new"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-xl text-blue-300 hover:text-blue-200 transition-all duration-200 hover:scale-105 hover:shadow-lg backdrop-blur-sm"
+                title="Built with Bolt.new"
+              >
+                <div className="w-5 h-5 bg-gradient-to-r from-blue-400 to-purple-400 rounded-md flex items-center justify-center">
+                  <Zap className="w-3 h-3 text-white" />
+                </div>
+                <span className="text-sm font-medium">Built with Bolt</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
             </div>
           </div>
         </div>
