@@ -54,18 +54,18 @@ export const WalletConnector: React.FC<WalletConnectorProps> = ({ onWalletConnec
         {/* Hero Section */}
         <div className="flex items-center justify-center min-h-screen p-4">
           <div className="max-w-4xl w-full">
-            <div className="text-center mb-12">
-              {/* QuickKash Logo - Lowered positioning */}
-              <div className="flex justify-center mb-8">
+            <div className="text-center mb-8">
+              {/* QuickKash Logo - Further lowered positioning */}
+              <div className="flex justify-center mb-4">
                 <div className="relative transform hover:scale-105 transition-transform duration-300">
-                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/20 to-teal-400/20 rounded-2xl blur-lg"></div>
-                  <div className="relative bg-gradient-to-r from-slate-800/70 to-slate-700/70 backdrop-blur-lg rounded-2xl p-6 border border-emerald-500/20 shadow-xl">
+                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/20 to-teal-400/20 rounded-xl blur-md"></div>
+                  <div className="relative bg-gradient-to-r from-slate-800/60 to-slate-700/60 backdrop-blur-md rounded-xl p-4 border border-emerald-500/20 shadow-lg">
                     <QuickKashLogo size="large" />
-                    <div className="absolute -top-2 -right-2">
-                      <Sparkles className="w-6 h-6 text-emerald-400 animate-pulse" />
+                    <div className="absolute -top-1 -right-1">
+                      <Sparkles className="w-5 h-5 text-emerald-400 animate-pulse" />
                     </div>
-                    <div className="absolute -bottom-1 -left-1">
-                      <div className="w-4 h-4 bg-gradient-to-r from-emerald-400 to-teal-400 rounded-full animate-bounce"></div>
+                    <div className="absolute -bottom-0.5 -left-0.5">
+                      <div className="w-3 h-3 bg-gradient-to-r from-emerald-400 to-teal-400 rounded-full animate-bounce"></div>
                     </div>
                   </div>
                 </div>
