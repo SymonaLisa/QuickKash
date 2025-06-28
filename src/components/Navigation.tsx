@@ -58,7 +58,7 @@ export const Navigation: React.FC<NavigationProps> = ({
   };
 
   return (
-    <nav className={`glass-card p-4 ${className}`}>
+    <nav className={`bg-slate-900/60 backdrop-blur-md border border-slate-700/30 rounded-2xl p-4 ${className}`}>
       <div className="flex items-center justify-between">
         {/* Logo */}
         <div 
