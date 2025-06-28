@@ -32,7 +32,7 @@ import { PremiumContentManager } from './PremiumContentManager';
 import { ProBrandingCustomizer } from './ProBrandingCustomizer';
 import { ShortlinkManager } from './ShortlinkManager';
 import { QuickKashLogo } from './QuickKashLogo';
-import { isSuperUser, shouldEnableSuperUserFeatures } from '../utils/devSuperUser';
+import { isSuperUser, shouldEnableSuperUserFeatures, devUtils } from '../utils/devSuperUser';
 
 interface CreatorProfile {
   id: string;
@@ -111,13 +111,20 @@ export const CreatorDashboard: React.FC = () => {
     setError(null);
 
     try {
-      // Add to super user list if not already there
-      const { devUtils } = await import('../utils/devSuperUser');
-      devUtils.addSuperUser(superUserWallet.trim());
+      let demoAddress = superUserWallet.trim();
       
-      setWalletAddress(superUserWallet.trim());
+      // If the entered address is not a valid Algorand address, generate a demo one
+      if (!/^[A-Z2-7]{58}$/.test(demoAddress)) {
+        demoAddress = devUtils.generateDemoAddress(demoAddress.slice(0, 10));
+        console.log(`Generated demo address: ${demoAddress}`);
+      }
+      
+      // Add to super user list
+      devUtils.addSuperUser(demoAddress);
+      
+      setWalletAddress(demoAddress);
       setIsSuperUserMode(true);
-      await loadProfile(superUserWallet.trim());
+      await loadProfile(demoAddress);
     } catch (err) {
       setError('Failed to enable super user access');
     } finally {
@@ -288,7 +295,7 @@ export const CreatorDashboard: React.FC = () => {
                     <span className="font-semibold text-red-300">Super User Access</span>
                   </div>
                   <p className="text-red-200 text-sm mb-3">
-                    For demo purposes - bypass wallet connection with any address
+                    For demo purposes - enter any text to generate a demo wallet
                   </p>
                   
                   <div className="space-y-3">
@@ -296,7 +303,7 @@ export const CreatorDashboard: React.FC = () => {
                       type="text"
                       value={superUserWallet}
                       onChange={(e) => setSuperUserWallet(e.target.value)}
-                      placeholder="Enter any wallet address..."
+                      placeholder="Enter demo name or wallet address..."
                       className="input-field text-sm"
                       onKeyPress={(e) => e.key === 'Enter' && handleSuperUserAccess()}
                     />

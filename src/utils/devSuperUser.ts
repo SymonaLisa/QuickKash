@@ -5,11 +5,13 @@
  * Super users get access to all Pro features and admin panels.
  */
 
-// List of dev super user wallet addresses
+// List of dev super user wallet addresses (using valid Algorand address format)
 const DEV_SUPER_USER_ADDRESSES: Set<string> = new Set([
-  'DEMO_WALLET_FOR_VIDEO_RECORDING', // Add your demo wallet here
-  'SUPER_USER_DEMO_ADDRESS_123456', // Another demo address
-  // Add more dev wallet addresses here
+  'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', // Demo wallet 1
+  'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB', // Demo wallet 2
+  'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC', // Demo wallet 3
+  'DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD', // Demo wallet 4
+  // Add more valid Algorand addresses here (58 characters, base32 format)
 ]);
 
 export interface DevSuperUserStatus {
@@ -47,14 +49,23 @@ class DevSuperUserManager {
 
   /**
    * Add a wallet address to the super user list (runtime only)
+   * Validates that the address is in proper Algorand format
    */
   addSuperUser(walletAddress: string): boolean {
     if (!walletAddress || typeof walletAddress !== 'string') {
       return false;
     }
     
-    DEV_SUPER_USER_ADDRESSES.add(walletAddress.trim());
-    console.log(`Added ${walletAddress} to dev super user list`);
+    const trimmedAddress = walletAddress.trim();
+    
+    // Validate Algorand address format (58 characters, base32)
+    if (!this.isValidAlgorandAddress(trimmedAddress)) {
+      console.warn(`Invalid Algorand address format: ${trimmedAddress}`);
+      return false;
+    }
+    
+    DEV_SUPER_USER_ADDRESSES.add(trimmedAddress);
+    console.log(`Added ${trimmedAddress} to dev super user list`);
     return true;
   }
 
@@ -109,6 +120,30 @@ class DevSuperUserManager {
   }
 
   /**
+   * Validate Algorand address format
+   */
+  private isValidAlgorandAddress(address: string): boolean {
+    // Algorand addresses are 58 characters long and use base32 encoding (A-Z, 2-7)
+    const algorandAddressRegex = /^[A-Z2-7]{58}$/;
+    return algorandAddressRegex.test(address);
+  }
+
+  /**
+   * Generate a valid demo Algorand address for testing
+   */
+  generateDemoAddress(prefix: string = 'DEMO'): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    let result = prefix.toUpperCase().slice(0, 10).padEnd(10, 'A');
+    
+    // Fill remaining characters to make 58 total
+    for (let i = result.length; i < 58; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    
+    return result;
+  }
+
+  /**
    * Log super user activity for debugging
    */
   logSuperUserActivity(walletAddress: string, action: string, details?: any): void {
@@ -138,6 +173,7 @@ export const devUtils = {
   addSuperUser: (walletAddress: string) => devSuperUserManager.addSuperUser(walletAddress),
   removeSuperUser: (walletAddress: string) => devSuperUserManager.removeSuperUser(walletAddress),
   getSuperUsers: () => devSuperUserManager.getSuperUsers(),
+  generateDemoAddress: (prefix?: string) => devSuperUserManager.generateDemoAddress(prefix),
   logActivity: (walletAddress: string, action: string, details?: any) => 
     devSuperUserManager.logSuperUserActivity(walletAddress, action, details)
 };
