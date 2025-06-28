@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Wallet, Loader2, CheckCircle, AlertTriangle, Info, Star } from 'lucide-react';
+import { Wallet, Loader2, CheckCircle, AlertTriangle, Info, Star, X } from 'lucide-react';
 import algosdk from 'algosdk';
 import { connectPera, signAndSendTip } from '../utils/walletConnection';
 import { supabaseManager } from '../utils/supabase';
@@ -38,6 +38,7 @@ export const TipButton: React.FC<TipButtonProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [txId, setTxId] = useState<string | null>(null);
   const [connectedWallet, setConnectedWallet] = useState<string | null>(null);
+  const [showConnectionModal, setShowConnectionModal] = useState(false);
 
   const finalAmount = fixedAmount ?? amount;
 
@@ -53,10 +54,17 @@ export const TipButton: React.FC<TipButtonProps> = ({
     };
   };
 
+  const handleCancelConnection = () => {
+    setIsLoading(false);
+    setShowConnectionModal(false);
+    setStatus(null);
+  };
+
   const handleTip = async () => {
     setIsLoading(true);
     setStatus('Connecting wallet...');
     setTxId(null);
+    setShowConnectionModal(true);
 
     try {
       const sender = await connectPera();
@@ -64,6 +72,7 @@ export const TipButton: React.FC<TipButtonProps> = ({
 
       setConnectedWallet(sender);
       setStatus('Sending transaction...');
+      setShowConnectionModal(false);
 
       const transactionId = await signAndSendTip({
         sender,
@@ -90,6 +99,7 @@ export const TipButton: React.FC<TipButtonProps> = ({
       const errorMessage = err?.message || 'Error sending tip';
       setStatus(`Error: ${errorMessage}`);
       onTipError?.(errorMessage);
+      setShowConnectionModal(false);
     } finally {
       setIsLoading(false);
     }
@@ -229,6 +239,43 @@ export const TipButton: React.FC<TipButtonProps> = ({
       <div className="text-center">
         <p className="text-xs text-muted">2% platform fee supports QuickKash development</p>
       </div>
+
+      {/* Connection Modal */}
+      {showConnectionModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="max-w-md w-full glass-card p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-primary">Connecting to Pera Wallet</h3>
+              <button
+                onClick={handleCancelConnection}
+                className="p-2 hover:bg-slate-700/50 rounded-lg transition-colors"
+                aria-label="Cancel connection"
+              >
+                <X className="w-5 h-5 text-slate-400" />
+              </button>
+            </div>
+            
+            <div className="text-center py-6">
+              <div className="w-16 h-16 accent-gradient rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                <Wallet className="w-8 h-8 text-white" />
+              </div>
+              <p className="text-secondary mb-4">
+                Please check your Pera Wallet app to approve the connection and transaction.
+              </p>
+              <p className="text-sm text-muted">
+                If you don't see a prompt, open your Pera Wallet app manually.
+              </p>
+            </div>
+
+            <button
+              onClick={handleCancelConnection}
+              className="w-full py-3 bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 rounded-xl transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

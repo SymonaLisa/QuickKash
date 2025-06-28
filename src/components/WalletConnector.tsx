@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Wallet, Shield, Zap, Sparkles, AlertTriangle, Users, Crown, TrendingUp, Globe, ArrowRight, ExternalLink, Eye, Palette, Share2 } from 'lucide-react';
+import { Wallet, Shield, Zap, Sparkles, AlertTriangle, Users, Crown, TrendingUp, Globe, ArrowRight, ExternalLink, Eye, Palette, Share2, X } from 'lucide-react';
 import { walletManager, WalletConnection } from '../utils/walletConnection';
 import { QuickKashLogo } from './QuickKashLogo';
 
@@ -12,18 +12,34 @@ export const WalletConnector: React.FC<WalletConnectorProps> = ({ onWalletConnec
   const navigate = useNavigate();
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showConnectionModal, setShowConnectionModal] = useState(false);
 
   const handleWalletConnect = async () => {
     setIsConnecting(true);
     setError(null);
+    setShowConnectionModal(true);
 
     try {
       const connection = await walletManager.connectPera();
       onWalletConnected(connection);
+      setShowConnectionModal(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Connection failed');
+      setShowConnectionModal(false);
     } finally {
       setIsConnecting(false);
+    }
+  };
+
+  const handleCancelConnection = () => {
+    setIsConnecting(false);
+    setShowConnectionModal(false);
+    setError(null);
+    // Disconnect any pending connection
+    try {
+      walletManager.disconnectPera();
+    } catch (error) {
+      console.log('No active connection to disconnect');
     }
   };
 
@@ -317,6 +333,54 @@ export const WalletConnector: React.FC<WalletConnectorProps> = ({ onWalletConnec
           </div>
         </div>
       </div>
+
+      {/* Connection Modal */}
+      {showConnectionModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="max-w-md w-full glass-card p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-primary">Connecting to Pera Wallet</h3>
+              <button
+                onClick={handleCancelConnection}
+                className="p-2 hover:bg-slate-700/50 rounded-lg transition-colors"
+                aria-label="Cancel connection"
+              >
+                <X className="w-5 h-5 text-slate-400" />
+              </button>
+            </div>
+            
+            <div className="text-center py-6">
+              <div className="w-16 h-16 accent-gradient rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                <Wallet className="w-8 h-8 text-white" />
+              </div>
+              <p className="text-secondary mb-4">
+                Please check your Pera Wallet app to approve the connection.
+              </p>
+              <p className="text-sm text-muted">
+                If you don't see a prompt, open your Pera Wallet app manually.
+              </p>
+            </div>
+
+            <div className="flex space-x-3">
+              <button
+                onClick={handleCancelConnection}
+                className="flex-1 py-3 bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  // Retry connection
+                  handleWalletConnect();
+                }}
+                className="flex-1 py-3 btn-primary"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
