@@ -26,7 +26,7 @@ export const QuickKashLogo: React.FC<QuickKashLogoProps> = ({
     <div className="flex items-center space-x-2" aria-label="QuickKash Logo">
       {showIcon && (
         <div className="relative" aria-hidden="true">
-          <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-2 shadow-lg">
+          <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-xl p-2 shadow-lg">
             <Zap className={`${iconSizes[size]} text-white`} />
           </div>
           <div className="absolute -top-1 -right-1 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full p-1">
@@ -35,7 +35,11 @@ export const QuickKashLogo: React.FC<QuickKashLogoProps> = ({
         </div>
       )}
       <span
-        className={`${sizeClasses[size]} font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent select-none`}
+        className={`${sizeClasses[size]} font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-emerald-300 to-teal-400 select-none drop-shadow-sm`}
+        style={{
+          textShadow: '0 0 20px rgba(16, 185, 129, 0.3)',
+          filter: 'brightness(1.1) contrast(1.1)'
+        }}
       >
         QuickKash
       </span>
