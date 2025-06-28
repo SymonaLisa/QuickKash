@@ -38,21 +38,15 @@ export const WalletConnector: React.FC<WalletConnectorProps> = ({ onWalletConnec
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/20 via-slate-900 to-slate-900"></div>
       
-      {/* Bolt Badge */}
-      <div className="fixed top-4 right-4 z-50">
-        <a
-          href="https://bolt.new"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block w-16 h-16 hover:scale-105 transition-transform duration-200"
-          title="Made with Bolt.new"
-        >
+      {/* Bolt Badge - Fixed position, non-clickable */}
+      <div className="absolute top-4 right-4 z-50">
+        <div className="w-16 h-16">
           <img
             src="/white_circle_360x360.png"
             alt="Powered by Bolt.new"
             className="w-full h-full object-contain"
           />
-        </a>
+        </div>
       </div>
       
       <div className="relative z-10">
