@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Wallet, Loader2, CheckCircle, AlertTriangle, Info, Star, X, RefreshCw } from 'lucide-react';
+import { Wallet, Loader2, CheckCircle, AlertTriangle, Info, Star, X } from 'lucide-react';
 import algosdk from 'algosdk';
-import { connectPera, signAndSendTip, WalletConnectionCancelledError } from '../utils/walletConnection';
+import { connectPera, signAndSendTip } from '../utils/walletConnection';
 import { supabaseManager } from '../utils/supabase';
 
 interface TipButtonProps {
@@ -39,7 +39,6 @@ export const TipButton: React.FC<TipButtonProps> = ({
   const [txId, setTxId] = useState<string | null>(null);
   const [connectedWallet, setConnectedWallet] = useState<string | null>(null);
   const [showConnectionModal, setShowConnectionModal] = useState(false);
-  const [connectionCancelled, setConnectionCancelled] = useState(false);
 
   const finalAmount = fixedAmount ?? amount;
 
@@ -59,20 +58,12 @@ export const TipButton: React.FC<TipButtonProps> = ({
     setIsLoading(false);
     setShowConnectionModal(false);
     setStatus(null);
-    setConnectionCancelled(false);
-  };
-
-  const handleRetryConnection = () => {
-    setConnectionCancelled(false);
-    setStatus(null);
-    handleTip();
   };
 
   const handleTip = async () => {
     setIsLoading(true);
     setStatus('Connecting wallet...');
     setTxId(null);
-    setConnectionCancelled(false);
     setShowConnectionModal(true);
 
     try {
@@ -105,19 +96,10 @@ export const TipButton: React.FC<TipButtonProps> = ({
       onTipSuccess?.(transactionId, finalAmount);
     } catch (err: any) {
       console.error('Tip failed:', err);
-      setShowConnectionModal(false);
-      
-      // Handle user cancellation gracefully
-      if (err instanceof WalletConnectionCancelledError) {
-        setConnectionCancelled(true);
-        setStatus('Wallet connection cancelled. Please try again.');
-        return; // Don't call onTipError for user cancellation
-      }
-      
-      // Handle other errors
       const errorMessage = err?.message || 'Error sending tip';
       setStatus(`Error: ${errorMessage}`);
       onTipError?.(errorMessage);
+      setShowConnectionModal(false);
     } finally {
       setIsLoading(false);
     }
@@ -188,30 +170,9 @@ export const TipButton: React.FC<TipButtonProps> = ({
         </div>
       )}
 
-      {/* Connection Cancelled Message */}
-      {connectionCancelled && (
-        <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <AlertTriangle className="w-4 h-4 text-yellow-400" />
-              <span className="text-yellow-300 text-sm font-medium">
-                Wallet connection cancelled
-              </span>
-            </div>
-            <button
-              onClick={handleRetryConnection}
-              className="flex items-center space-x-1 px-3 py-1 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 rounded-lg transition-colors text-sm"
-            >
-              <RefreshCw className="w-3 h-3" />
-              <span>Retry</span>
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Tip Button */}
       <button
-        onClick={connectionCancelled ? handleRetryConnection : handleTip}
+        onClick={handleTip}
         disabled={isLoading || finalAmount <= 0}
         className="w-full flex items-center justify-center space-x-2 py-3 btn-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
         aria-label={`Tip ${finalAmount.toFixed(2)} ALGO with Pera Wallet`}
@@ -220,11 +181,6 @@ export const TipButton: React.FC<TipButtonProps> = ({
           <>
             <Loader2 className="w-5 h-5 animate-spin" />
             <span>Processing...</span>
-          </>
-        ) : connectionCancelled ? (
-          <>
-            <RefreshCw className="w-5 h-5" />
-            <span>Try Again</span>
           </>
         ) : (
           <>
@@ -243,8 +199,6 @@ export const TipButton: React.FC<TipButtonProps> = ({
           className={`p-3 rounded-xl text-sm font-medium ${
             status.includes('Error')
               ? 'bg-red-500/10 border border-red-500/20 text-red-300'
-              : status.includes('cancelled')
-              ? 'bg-yellow-500/10 border border-yellow-500/20 text-yellow-300'
               : status.includes('Thank you') || status.includes('Thanks')
               ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-300'
               : 'bg-blue-500/10 border border-blue-500/20 text-blue-300'
@@ -254,8 +208,6 @@ export const TipButton: React.FC<TipButtonProps> = ({
         >
           <div className="flex items-start space-x-2">
             {status.includes('Error') ? (
-              <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-            ) : status.includes('cancelled') ? (
               <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
             ) : status.includes('Thank you') || status.includes('Thanks') ? (
               <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />

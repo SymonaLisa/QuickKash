@@ -107,19 +107,17 @@ function App() {
   return (
     <Router>
       <div className="relative min-h-screen">
-        {/* Navigation - positioned to not block background elements */}
-        <div className="fixed top-0 left-0 right-0 z-30 pointer-events-none">
-          <div className="pointer-events-auto">
-            <Navigation 
-              className="m-4"
-              showSuperUserIndicator={isCurrentUserSuperUser}
-              walletAddress={currentWalletAddress}
-            />
-          </div>
+        {/* Navigation */}
+        <div className="fixed top-0 left-0 right-0 z-40">
+          <Navigation 
+            className="m-4"
+            showSuperUserIndicator={isCurrentUserSuperUser}
+            walletAddress={currentWalletAddress}
+          />
         </div>
 
-        {/* Main Content - with proper spacing to account for navigation */}
-        <div className="relative z-10">
+        {/* Main Content */}
+        <div className="pt-20">
           <Routes>
             <Route path="/" element={<CreateTipJar />} />
             <Route path="/home" element={<HomePage />} />
@@ -149,7 +147,7 @@ function App() {
         </div>
 
         {/* Admin Access Trigger */}
-        <AdminTrigger className="fixed top-4 right-4 z-40" />
+        <AdminTrigger className="fixed top-4 right-4" />
 
         {/* Super User Panel */}
         {superUserFeaturesEnabled && (
@@ -162,7 +160,7 @@ function App() {
 
         {/* Super User Trigger Hint (Development only) */}
         {superUserFeaturesEnabled && process.env.NODE_ENV === 'development' && (
-          <div className="fixed bottom-4 left-4 text-xs text-slate-500 bg-slate-800/50 px-2 py-1 rounded z-40">
+          <div className="fixed bottom-4 left-4 text-xs text-slate-500 bg-slate-800/50 px-2 py-1 rounded">
             Press Ctrl+Shift+S for Super User Panel
           </div>
         )}

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Wallet, Shield, Zap, Sparkles, AlertTriangle, Users, Crown, TrendingUp, Globe, ArrowRight, ExternalLink, Eye, Palette, Share2, X, Download, Smartphone, Info } from 'lucide-react';
+import { Wallet, Shield, Zap, Sparkles, AlertTriangle, Users, Crown, TrendingUp, Globe, ArrowRight, ExternalLink, Eye, Palette, Share2, X, Download, Smartphone } from 'lucide-react';
 import { walletManager, WalletConnection } from '../utils/walletConnection';
 import { QuickKashLogo } from './QuickKashLogo';
 
@@ -44,7 +44,6 @@ export const WalletConnector: React.FC<WalletConnectorProps> = ({ onWalletConnec
     }
   };
 
-  const isUserCancelledError = error && error.includes("Connect modal is closed by user");
   const isPeraWalletError = error && error.includes("Couldn't open Pera Wallet");
 
   return (
@@ -56,35 +55,16 @@ export const WalletConnector: React.FC<WalletConnectorProps> = ({ onWalletConnec
         <div className="flex items-center justify-center min-h-screen p-4">
           <div className="max-w-4xl w-full">
             <div className="text-center mb-12">
-              {/* Enhanced QuickKash Header - Lowered positioning */}
-              <div className="mb-12">
-                <div className="flex justify-center mb-6">
-                  <div className="relative transform hover:scale-105 transition-transform duration-300">
-                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/20 to-teal-400/20 rounded-3xl blur-xl"></div>
-                    <div className="relative bg-gradient-to-r from-slate-800/80 to-slate-700/80 backdrop-blur-xl rounded-3xl p-6 border border-emerald-500/30 shadow-2xl">
-                      <QuickKashLogo size="large" />
-                      <div className="absolute -top-2 -right-2">
-                        <Sparkles className="w-8 h-8 text-emerald-400 animate-pulse" />
-                      </div>
-                      <div className="absolute -bottom-1 -left-1">
-                        <div className="w-5 h-5 bg-gradient-to-r from-emerald-400 to-teal-400 rounded-full animate-pulse"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Subtitle with enhanced styling */}
+              <div className="flex justify-center mb-8">
                 <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/10 to-teal-400/10 rounded-2xl blur-lg"></div>
-                  <div className="relative bg-slate-800/40 backdrop-blur-sm rounded-2xl p-4 border border-emerald-500/20">
-                    <p className="text-lg text-emerald-300 font-semibold tracking-wide">
-                      The Future of Creator Monetization
-                    </p>
+                  <QuickKashLogo size="large" />
+                  <div className="absolute -top-2 -right-2">
+                    <Sparkles className="w-8 h-8 text-emerald-400 animate-pulse" />
                   </div>
                 </div>
               </div>
               
-              <h1 className="text-4xl md:text-6xl font-bold text-primary mb-8 leading-tight">
+              <h1 className="text-4xl md:text-6xl font-bold text-primary mb-6 leading-tight">
                 Decentralized Tip Jars
                 <br />
                 <span className="bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
@@ -92,12 +72,12 @@ export const WalletConnector: React.FC<WalletConnectorProps> = ({ onWalletConnec
                 </span>
               </h1>
               
-              <p className="text-xl text-secondary leading-relaxed mb-10 max-w-3xl mx-auto">
+              <p className="text-xl text-secondary leading-relaxed mb-8 max-w-3xl mx-auto">
                 Create your own tip jar, receive ALGO payments directly to your wallet, 
                 and reward supporters with premium content. No middlemen, no tracking, 100% yours.
               </p>
               
-              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-6 backdrop-blur-sm mb-10">
+              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-6 backdrop-blur-sm mb-8">
                 <div className="flex flex-wrap items-center justify-center gap-6 text-emerald-300 text-sm font-medium">
                   <div className="flex items-center space-x-2">
                     <Globe className="w-4 h-4" />
@@ -162,57 +142,40 @@ export const WalletConnector: React.FC<WalletConnectorProps> = ({ onWalletConnec
               </p>
 
               {error && (
-                <div className={`mb-6 p-4 rounded-xl text-sm backdrop-blur-sm ${
-                  isUserCancelledError 
-                    ? 'bg-blue-500/10 border border-blue-500/20 text-blue-300'
-                    : 'bg-red-500/10 border border-red-500/20 text-red-300'
-                }`}>
+                <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-300 text-sm backdrop-blur-sm">
                   <div className="flex items-start space-x-2">
-                    {isUserCancelledError ? (
-                      <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                    ) : (
-                      <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                    )}
+                    <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                     <div className="text-left">
-                      {isUserCancelledError ? (
-                        <>
-                          <p className="font-medium mb-1">Connection Cancelled</p>
-                          <p>You cancelled the wallet connection. Click "Connect with Pera Wallet" to try again.</p>
-                        </>
-                      ) : (
-                        <>
-                          <p className="font-medium mb-1">Connection Failed</p>
-                          <p className="mb-3">{error}</p>
-                          
-                          {isPeraWalletError && (
-                            <div className="bg-red-500/5 border border-red-500/10 rounded-lg p-3 mt-3">
-                              <p className="font-medium mb-2 text-red-200">Troubleshooting Tips:</p>
-                              <ul className="text-xs space-y-1 text-red-300">
-                                <li className="flex items-start space-x-2">
-                                  <Download className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                                  <span>Make sure Pera Wallet browser extension is installed and enabled</span>
-                                </li>
-                                <li className="flex items-start space-x-2">
-                                  <Smartphone className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                                  <span>If using mobile, ensure Pera Wallet app is open and connected</span>
-                                </li>
-                                <li className="flex items-start space-x-2">
-                                  <ExternalLink className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                                  <span>
-                                    <a 
-                                      href="https://perawallet.app/" 
-                                      target="_blank" 
-                                      rel="noopener noreferrer"
-                                      className="text-red-200 hover:text-red-100 underline"
-                                    >
-                                      Download Pera Wallet
-                                    </a>
-                                  </span>
-                                </li>
-                              </ul>
-                            </div>
-                          )}
-                        </>
+                      <p className="font-medium mb-1">Connection Failed</p>
+                      <p className="mb-3">{error}</p>
+                      
+                      {isPeraWalletError && (
+                        <div className="bg-red-500/5 border border-red-500/10 rounded-lg p-3 mt-3">
+                          <p className="font-medium mb-2 text-red-200">Troubleshooting Tips:</p>
+                          <ul className="text-xs space-y-1 text-red-300">
+                            <li className="flex items-start space-x-2">
+                              <Download className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                              <span>Make sure Pera Wallet browser extension is installed and enabled</span>
+                            </li>
+                            <li className="flex items-start space-x-2">
+                              <Smartphone className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                              <span>If using mobile, ensure Pera Wallet app is open and connected</span>
+                            </li>
+                            <li className="flex items-start space-x-2">
+                              <ExternalLink className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                              <span>
+                                <a 
+                                  href="https://perawallet.app/" 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-red-200 hover:text-red-100 underline"
+                                >
+                                  Download Pera Wallet
+                                </a>
+                              </span>
+                            </li>
+                          </ul>
+                        </div>
                       )}
                     </div>
                   </div>

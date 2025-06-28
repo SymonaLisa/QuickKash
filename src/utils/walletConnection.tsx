@@ -12,14 +12,6 @@ export interface WalletConnection {
   provider: string;
 }
 
-// Custom error class for user-cancelled connections
-export class WalletConnectionCancelledError extends Error {
-  constructor(message: string = 'Wallet connection cancelled by user') {
-    super(message);
-    this.name = 'WalletConnectionCancelledError';
-  }
-}
-
 class WalletManager {
   private peraWallet: PeraWalletConnect;
   private algodClient: algosdk.Algodv2;
@@ -38,16 +30,7 @@ class WalletManager {
       return { address: accounts[0], provider: 'Pera Wallet' };
     } catch (error: any) {
       console.error('Pera wallet connection failed:', error);
-      
-      // Check if the error is due to user cancellation
-      if (error?.message?.includes('Connect modal is closed by user') || 
-          error?.message?.includes('cancelled') ||
-          error?.message?.includes('rejected') ||
-          error?.message?.includes('denied')) {
-        throw new WalletConnectionCancelledError('Pera connection cancelled by user');
-      }
-      
-      // Re-throw the original error for other types of failures
+      // Re-throw the original error to preserve the specific error message
       throw error;
     }
   }
@@ -77,12 +60,6 @@ export const connectPera = async (): Promise<string | null> => {
     return connection.address;
   } catch (err) {
     console.error('Pera Wallet connection failed:', err);
-    
-    // Re-throw cancellation errors to be handled by calling components
-    if (err instanceof WalletConnectionCancelledError) {
-      throw err;
-    }
-    
     return null;
   }
 };

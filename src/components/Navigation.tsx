@@ -58,22 +58,14 @@ export const Navigation: React.FC<NavigationProps> = ({
   };
 
   return (
-    <nav className={`bg-slate-900/80 backdrop-blur-md border border-slate-700/50 rounded-2xl p-4 shadow-xl ${className}`}>
+    <nav className={`glass-card p-4 ${className}`}>
       <div className="flex items-center justify-between">
-        {/* Logo with enhanced visibility */}
+        {/* Logo */}
         <div 
-          className="cursor-pointer hover:scale-105 transition-transform group"
+          className="cursor-pointer hover:scale-105 transition-transform"
           onClick={() => navigate('/')}
         >
-          <div className="relative">
-            {/* Background glow for better visibility */}
-            <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/20 to-teal-400/20 rounded-xl blur-sm group-hover:blur-md transition-all"></div>
-            
-            {/* Logo container with solid background */}
-            <div className="relative bg-slate-800/90 backdrop-blur-sm rounded-xl px-4 py-2 border border-emerald-500/30 group-hover:border-emerald-400/50 transition-all">
-              <QuickKashLogo size="small" />
-            </div>
-          </div>
+          <QuickKashLogo size="small" />
         </div>
 
         {/* Navigation Items */}

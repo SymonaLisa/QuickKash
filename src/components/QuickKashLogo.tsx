@@ -26,7 +26,7 @@ export const QuickKashLogo: React.FC<QuickKashLogoProps> = ({
     <div className="flex items-center space-x-2" aria-label="QuickKash Logo">
       {showIcon && (
         <div className="relative" aria-hidden="true">
-          <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-xl p-2 shadow-lg">
+          <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-2 shadow-lg">
             <Zap className={`${iconSizes[size]} text-white`} />
           </div>
           <div className="absolute -top-1 -right-1 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full p-1">
@@ -34,23 +34,11 @@ export const QuickKashLogo: React.FC<QuickKashLogoProps> = ({
           </div>
         </div>
       )}
-      <div className="relative">
-        {/* Background for better contrast */}
-        <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm rounded-lg px-2 py-1 border border-emerald-500/30"></div>
-        
-        {/* Main text with enhanced visibility */}
-        <span
-          className={`${sizeClasses[size]} font-bold text-white relative z-10 px-2 py-1 select-none`}
-          style={{
-            textShadow: '0 0 10px rgba(16, 185, 129, 0.8), 0 2px 4px rgba(0, 0, 0, 0.8)',
-            filter: 'brightness(1.2) contrast(1.2)'
-          }}
-        >
-          <span className="bg-gradient-to-r from-emerald-300 via-emerald-200 to-teal-300 bg-clip-text text-transparent">
-            QuickKash
-          </span>
-        </span>
-      </div>
+      <span
+        className={`${sizeClasses[size]} font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent select-none`}
+      >
+        QuickKash
+      </span>
     </div>
   );
 };

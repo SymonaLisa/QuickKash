@@ -9,7 +9,6 @@
 const DEV_SUPER_USER_ADDRESSES: Set<string> = new Set([
   'DEVWALLET123456789ABCDEF', // Replace with your actual dev wallet
   'TESTWALLET987654321FEDCBA', // Replace with your test wallet
-  'DEMOWALLET1234567890ABCDEF', // Demo wallet for testing
   // Add more dev wallet addresses here
 ]);
 

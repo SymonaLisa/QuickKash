@@ -21,10 +21,9 @@ import {
   BarChart3,
   LogOut,
   Shield,
-  Link,
-  RefreshCw
+  Link
 } from 'lucide-react';
-import { connectPera, disconnectPera, WalletConnectionCancelledError } from '../utils/walletConnection';
+import { connectPera, disconnectPera } from '../utils/walletConnection';
 import { supabaseManager } from '../utils/supabase';
 import { checkProStatus } from '../utils/checkProStatus';
 import { TipHistory } from './TipHistory';
@@ -62,7 +61,6 @@ export const CreatorDashboard: React.FC = () => {
   const [tipStats, setTipStats] = useState({ total: 0, count: 0, premiumCount: 0 });
   const [copied, setCopied] = useState(false);
   const [connectionAttempted, setConnectionAttempted] = useState(false);
-  const [connectionCancelled, setConnectionCancelled] = useState(false);
 
   useEffect(() => {
     initializeDashboard();
@@ -71,14 +69,13 @@ export const CreatorDashboard: React.FC = () => {
   const initializeDashboard = async () => {
     setLoading(true);
     setError(null);
-    setConnectionCancelled(false);
     setConnectionAttempted(true);
 
     try {
       // Connect wallet with route protection
       const address = await connectPera();
       if (!address) {
-        // 🚫 Redirect to homepage if no wallet connected (but not if cancelled)
+        // 🚫 Redirect to homepage if no wallet connected
         navigate('/');
         return;
       }
@@ -87,15 +84,7 @@ export const CreatorDashboard: React.FC = () => {
       await loadProfile(address);
     } catch (err) {
       console.error('Dashboard initialization failed:', err);
-      
-      // Handle user cancellation gracefully
-      if (err instanceof WalletConnectionCancelledError) {
-        setConnectionCancelled(true);
-        setError('Wallet connection was cancelled. Please connect your wallet to access the dashboard.');
-        return; // Don't navigate away, let user retry
-      }
-      
-      // 🚫 Redirect to homepage on other connection failures
+      // 🚫 Redirect to homepage on connection failure
       navigate('/');
     } finally {
       setLoading(false);
@@ -173,12 +162,6 @@ export const CreatorDashboard: React.FC = () => {
     }
   };
 
-  const handleRetryConnection = () => {
-    setConnectionCancelled(false);
-    setError(null);
-    initializeDashboard();
-  };
-
   const getProfileUrl = () => {
     if (!walletAddress) return '';
     return `${window.location.origin}/creator/${walletAddress}`;
@@ -223,46 +206,22 @@ export const CreatorDashboard: React.FC = () => {
     );
   }
 
-  // Show connection required screen if wallet connection failed or was cancelled
-  if ((!walletAddress && connectionAttempted) || connectionCancelled) {
+  // Show connection required screen if wallet connection failed
+  if (!walletAddress && connectionAttempted) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
         <div className="max-w-md w-full glass-card p-8 text-center">
           <Shield className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-primary mb-2">
-            {connectionCancelled ? 'Connection Cancelled' : 'Wallet Required'}
-          </h1>
+          <h1 className="text-2xl font-bold text-primary mb-2">Wallet Required</h1>
           <p className="text-secondary mb-6">
-            {connectionCancelled 
-              ? 'You cancelled the wallet connection. Please connect your Pera Wallet to access the creator dashboard.'
-              : 'Please connect your Pera Wallet to access the creator dashboard.'
-            }
+            Please connect your Pera Wallet to access the creator dashboard.
           </p>
-          
-          {/* Show error message if there is one */}
-          {error && (
-            <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl text-yellow-300 text-sm">
-              {error}
-            </div>
-          )}
-          
           <div className="space-y-3">
             <button
-              onClick={handleRetryConnection}
-              disabled={loading}
-              className="w-full btn-primary py-3 flex items-center justify-center space-x-2"
+              onClick={initializeDashboard}
+              className="w-full btn-primary py-3"
             >
-              {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Connecting...</span>
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="w-5 h-5" />
-                  <span>{connectionCancelled ? 'Try Again' : 'Connect Pera Wallet'}</span>
-                </>
-              )}
+              Connect Pera Wallet
             </button>
             <button
               onClick={() => navigate('/')}
