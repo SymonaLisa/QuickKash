@@ -30,7 +30,8 @@ class WalletManager {
       return { address: accounts[0], provider: 'Pera Wallet' };
     } catch (error: any) {
       console.error('Pera wallet connection failed:', error);
-      throw new Error('Failed to connect to Pera Wallet');
+      // Re-throw the original error to preserve the specific error message
+      throw error;
     }
   }
 

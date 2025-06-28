@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Wallet, Shield, Zap, Sparkles, AlertTriangle, Users, Crown, TrendingUp, Globe, ArrowRight, ExternalLink, Eye, Palette, Share2, X } from 'lucide-react';
+import { Wallet, Shield, Zap, Sparkles, AlertTriangle, Users, Crown, TrendingUp, Globe, ArrowRight, ExternalLink, Eye, Palette, Share2, X, Download, Smartphone } from 'lucide-react';
 import { walletManager, WalletConnection } from '../utils/walletConnection';
 import { QuickKashLogo } from './QuickKashLogo';
 
@@ -24,7 +24,8 @@ export const WalletConnector: React.FC<WalletConnectorProps> = ({ onWalletConnec
       onWalletConnected(connection);
       setShowConnectionModal(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Connection failed');
+      const errorMessage = err instanceof Error ? err.message : 'Connection failed';
+      setError(errorMessage);
       setShowConnectionModal(false);
     } finally {
       setIsConnecting(false);
@@ -42,6 +43,8 @@ export const WalletConnector: React.FC<WalletConnectorProps> = ({ onWalletConnec
       console.log('No active connection to disconnect');
     }
   };
+
+  const isPeraWalletError = error && error.includes("Couldn't open Pera Wallet");
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -142,9 +145,38 @@ export const WalletConnector: React.FC<WalletConnectorProps> = ({ onWalletConnec
                 <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-300 text-sm backdrop-blur-sm">
                   <div className="flex items-start space-x-2">
                     <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                    <div>
+                    <div className="text-left">
                       <p className="font-medium mb-1">Connection Failed</p>
-                      <p>{error}</p>
+                      <p className="mb-3">{error}</p>
+                      
+                      {isPeraWalletError && (
+                        <div className="bg-red-500/5 border border-red-500/10 rounded-lg p-3 mt-3">
+                          <p className="font-medium mb-2 text-red-200">Troubleshooting Tips:</p>
+                          <ul className="text-xs space-y-1 text-red-300">
+                            <li className="flex items-start space-x-2">
+                              <Download className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                              <span>Make sure Pera Wallet browser extension is installed and enabled</span>
+                            </li>
+                            <li className="flex items-start space-x-2">
+                              <Smartphone className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                              <span>If using mobile, ensure Pera Wallet app is open and connected</span>
+                            </li>
+                            <li className="flex items-start space-x-2">
+                              <ExternalLink className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                              <span>
+                                <a 
+                                  href="https://perawallet.app/" 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-red-200 hover:text-red-100 underline"
+                                >
+                                  Download Pera Wallet
+                                </a>
+                              </span>
+                            </li>
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
