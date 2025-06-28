@@ -14,7 +14,10 @@ import {
   Eye,
   EyeOff,
   Copy,
-  Loader2
+  Loader2,
+  Palette,
+  Star,
+  Gift
 } from 'lucide-react';
 import { devSuperUserManager, devUtils, getSuperUserStatus } from '../utils/devSuperUser';
 import { AdminProPanel } from './AdminProPanel';
@@ -30,12 +33,13 @@ export const SuperUserPanel: React.FC<SuperUserPanelProps> = ({
   onClose,
   currentWalletAddress 
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'admin'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'demo' | 'admin'>('overview');
   const [superUsers, setSuperUsers] = useState<string[]>([]);
   const [newSuperUser, setNewSuperUser] = useState('');
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [demoWallet, setDemoWallet] = useState('');
 
   useEffect(() => {
     if (isVisible) {
@@ -74,6 +78,22 @@ export const SuperUserPanel: React.FC<SuperUserPanelProps> = ({
     }
   };
 
+  const handleAddDemoWallet = () => {
+    const address = demoWallet.trim();
+    if (!address) return;
+
+    if (devUtils.addSuperUser(address)) {
+      setDemoWallet('');
+      loadSuperUsers();
+      alert(`Demo wallet ${address.slice(0, 8)}... added! This wallet now has full Pro access for demo purposes.`);
+    }
+  };
+
+  const generateDemoWallet = () => {
+    const demoAddress = `DEMO${Date.now().toString().slice(-10)}${'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'.slice(0, 44)}`;
+    setDemoWallet(demoAddress);
+  };
+
   const formatAddress = (address: string) => {
     return `${address.slice(0, 8)}...${address.slice(-8)}`;
   };
@@ -101,7 +121,7 @@ export const SuperUserPanel: React.FC<SuperUserPanelProps> = ({
                 <h2 id="superUserPanelTitle" className="text-2xl font-bold text-primary">
                   Super User Panel
                 </h2>
-                <p className="text-secondary text-sm">Enhanced admin access and controls</p>
+                <p className="text-secondary text-sm">Enhanced admin access and demo controls</p>
               </div>
             </div>
             {onClose && (
@@ -153,6 +173,7 @@ export const SuperUserPanel: React.FC<SuperUserPanelProps> = ({
           <div className="flex space-x-2 mb-6 overflow-x-auto">
             {[
               { id: 'overview', label: 'Overview', icon: Eye },
+              { id: 'demo', label: 'Demo Setup', icon: Star },
               { id: 'users', label: 'Super Users', icon: Users },
               { id: 'admin', label: 'Admin Tools', icon: Settings }
             ].map((tab) => {
@@ -177,7 +198,7 @@ export const SuperUserPanel: React.FC<SuperUserPanelProps> = ({
           {/* Tab Content */}
           {activeTab === 'overview' && (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
                   <div className="flex items-center space-x-2 mb-2">
                     <Users className="w-5 h-5 text-blue-400" />
@@ -195,6 +216,15 @@ export const SuperUserPanel: React.FC<SuperUserPanelProps> = ({
                   <div className="text-2xl font-bold text-emerald-400">Enabled</div>
                   <div className="text-sm text-muted">Super user features active</div>
                 </div>
+
+                <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Star className="w-5 h-5 text-yellow-400" />
+                    <span className="font-medium text-primary">Demo Mode</span>
+                  </div>
+                  <div className="text-2xl font-bold text-yellow-400">Ready</div>
+                  <div className="text-sm text-muted">Pro features unlocked</div>
+                </div>
               </div>
 
               <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
@@ -202,8 +232,10 @@ export const SuperUserPanel: React.FC<SuperUserPanelProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {[
                     'Automatic Pro access',
+                    'Custom branding features',
+                    'Premium content management',
+                    'Advanced analytics',
                     'Admin panel access',
-                    'Pro feature testing',
                     'User management',
                     'Database operations',
                     'Debug information'
@@ -213,6 +245,109 @@ export const SuperUserPanel: React.FC<SuperUserPanelProps> = ({
                       <span>{capability}</span>
                     </div>
                   ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'demo' && (
+            <div className="space-y-6">
+              {/* Demo Setup Instructions */}
+              <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 rounded-xl p-6 backdrop-blur-sm">
+                <div className="flex items-center space-x-2 mb-4">
+                  <Star className="w-6 h-6 text-yellow-400" />
+                  <h3 className="text-xl font-bold text-primary">Demo Video Setup</h3>
+                </div>
+                <p className="text-secondary mb-4">
+                  Set up mock Pro access for demo purposes. Any wallet address added here will have full Pro features enabled.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                  <div className="flex items-center space-x-2">
+                    <Palette className="w-4 h-4 text-emerald-400" />
+                    <span>Custom branding & themes</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Gift className="w-4 h-4 text-purple-400" />
+                    <span>Premium content features</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Crown className="w-4 h-4 text-yellow-400" />
+                    <span>Pro badge & indicators</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Settings className="w-4 h-4 text-blue-400" />
+                    <span>Advanced dashboard features</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Demo Wallet Setup */}
+              <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+                <h3 className="font-medium text-primary mb-3">Quick Demo Wallet Setup</h3>
+                <div className="space-y-3">
+                  <div className="flex space-x-3">
+                    <input
+                      type="text"
+                      value={demoWallet}
+                      onChange={(e) => setDemoWallet(e.target.value)}
+                      placeholder="Enter wallet address for demo..."
+                      className="input-field flex-1"
+                      onKeyPress={(e) => e.key === 'Enter' && handleAddDemoWallet()}
+                    />
+                    <button
+                      onClick={generateDemoWallet}
+                      className="px-4 py-2 bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 rounded-xl transition-colors"
+                    >
+                      Generate
+                    </button>
+                    <button
+                      onClick={handleAddDemoWallet}
+                      disabled={!demoWallet.trim()}
+                      className="flex items-center space-x-2 px-4 py-2 btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Add Demo</span>
+                    </button>
+                  </div>
+                  <p className="text-xs text-muted">
+                    Add any wallet address to grant it temporary Pro access for demo purposes. 
+                    This bypasses all Pro checks and enables all premium features.
+                  </p>
+                </div>
+              </div>
+
+              {/* Demo Instructions */}
+              <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+                <h3 className="font-medium text-primary mb-3">Demo Video Instructions</h3>
+                <div className="space-y-3 text-sm text-secondary">
+                  <div className="flex items-start space-x-3">
+                    <div className="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center text-white text-xs font-bold mt-0.5">1</div>
+                    <div>
+                      <p className="font-medium text-primary">Add your demo wallet above</p>
+                      <p>This will give your wallet full Pro access for the demo</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <div className="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center text-white text-xs font-bold mt-0.5">2</div>
+                    <div>
+                      <p className="font-medium text-primary">Navigate to the dashboard</p>
+                      <p>You'll see all Pro features unlocked including branding customization</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <div className="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center text-white text-xs font-bold mt-0.5">3</div>
+                    <div>
+                      <p className="font-medium text-primary">Showcase Pro features</p>
+                      <p>Custom branding, premium content, advanced analytics, and more</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <div className="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center text-white text-xs font-bold mt-0.5">4</div>
+                    <div>
+                      <p className="font-medium text-primary">Remove demo access when done</p>
+                      <p>Clean up by removing the wallet from the super user list</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -264,7 +399,11 @@ export const SuperUserPanel: React.FC<SuperUserPanelProps> = ({
                           </div>
                           <div>
                             <p className="font-medium text-primary">{formatAddress(address)}</p>
-                            <p className="text-xs text-muted">Super User</p>
+                            <div className="flex items-center space-x-2">
+                              <span className="text-xs text-muted">Super User</span>
+                              <Crown className="w-3 h-3 text-yellow-400" />
+                              <span className="text-xs text-yellow-300">Pro Access</span>
+                            </div>
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">

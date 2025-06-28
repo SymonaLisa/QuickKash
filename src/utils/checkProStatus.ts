@@ -15,7 +15,7 @@ export async function checkProStatus(walletAddress: string): Promise<boolean> {
       return false;
     }
 
-    // First check if user is a super user (highest priority)
+    // First check if user is a super user (highest priority for demo purposes)
     if (isSuperUser(walletAddress)) {
       return true;
     }

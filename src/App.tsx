@@ -70,7 +70,7 @@ function CreateTipJar() {
     );
   }
 
-  if (currentState === 'tip-jar-created' && createdMetadata) {
+  if (currentState === 'tip-jar-created' && creatorMetadata) {
     return (
       <TipJarCreated 
         metadata={creatorMetadata}
