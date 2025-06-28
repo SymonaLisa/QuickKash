@@ -45,20 +45,20 @@ class WalletManager {
     } catch (error: any) {
       console.error('MyAlgo wallet connection failed:', error);
       
-      // Safely extract error message
-      const errorMessage = error?.message || error?.toString() || 'Unknown error';
+      // Convert error to string at the beginning for reliable string operations
+      const errorString = String(error?.message || error || 'Unknown error');
       
-      if (errorMessage.includes('User rejected')) {
+      if (errorString.includes('User rejected')) {
         throw new Error('Connection cancelled by user');
       }
-      if (errorMessage.includes('not available')) {
+      if (errorString.includes('not available')) {
         throw new Error('MyAlgo Wallet is not available. Check your internet connection and try again.');
       }
-      if (errorMessage.includes('blocked')) {
+      if (errorString.includes('blocked')) {
         throw new Error('MyAlgo Wallet connection was blocked. Please check your browser settings and try again.');
       }
       
-      throw new Error(`MyAlgo connection failed: ${errorMessage}`);
+      throw new Error(`MyAlgo connection failed: ${errorString}`);
     }
   }
 
