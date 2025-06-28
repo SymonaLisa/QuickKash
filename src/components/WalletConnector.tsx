@@ -55,7 +55,7 @@ export const WalletConnector: React.FC<WalletConnectorProps> = ({ onWalletConnec
         <div className="flex items-center justify-center min-h-screen p-4">
           <div className="max-w-4xl w-full">
             <div className="text-center mb-12">
-              <div className="flex justify-center mb-8">
+              <div className="flex justify-center mb-10">
                 <div className="relative">
                   <QuickKashLogo size="large" />
                   <div className="absolute -top-2 -right-2">
@@ -64,7 +64,7 @@ export const WalletConnector: React.FC<WalletConnectorProps> = ({ onWalletConnec
                 </div>
               </div>
               
-              <h1 className="text-4xl md:text-6xl font-bold text-primary mb-6 leading-tight">
+              <h1 className="text-4xl md:text-6xl font-bold text-primary mb-8 leading-tight">
                 Decentralized Tip Jars
                 <br />
                 <span className="bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
@@ -72,12 +72,12 @@ export const WalletConnector: React.FC<WalletConnectorProps> = ({ onWalletConnec
                 </span>
               </h1>
               
-              <p className="text-xl text-secondary leading-relaxed mb-8 max-w-3xl mx-auto">
+              <p className="text-xl text-secondary leading-relaxed mb-10 max-w-3xl mx-auto">
                 Create your own tip jar, receive ALGO payments directly to your wallet, 
                 and reward supporters with premium content. No middlemen, no tracking, 100% yours.
               </p>
               
-              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-6 backdrop-blur-sm mb-8">
+              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-6 backdrop-blur-sm mb-10">
                 <div className="flex flex-wrap items-center justify-center gap-6 text-emerald-300 text-sm font-medium">
                   <div className="flex items-center space-x-2">
                     <Globe className="w-4 h-4" />
