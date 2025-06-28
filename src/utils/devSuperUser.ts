@@ -7,8 +7,8 @@
 
 // List of dev super user wallet addresses
 const DEV_SUPER_USER_ADDRESSES: Set<string> = new Set([
-  'DEVWALLET123456789ABCDEF', // Replace with your actual dev wallet
-  'TESTWALLET987654321FEDCBA', // Replace with your test wallet
+  'DEMO_WALLET_FOR_VIDEO_RECORDING', // Add your demo wallet here
+  'SUPER_USER_DEMO_ADDRESS_123456', // Another demo address
   // Add more dev wallet addresses here
 ]);
 
