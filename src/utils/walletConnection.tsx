@@ -1,6 +1,6 @@
 import { PeraWalletConnect } from '@perawallet/connect';
 import algosdk from 'algosdk';
-import { Buffer } from 'buffer';  // Added for browser Buffer support
+import { Buffer } from 'buffer';
 
 // Polyfill Buffer globally for browser (if needed)
 if (typeof window !== 'undefined' && !(window as any).Buffer) {
@@ -34,24 +34,12 @@ class WalletManager {
     }
   }
 
-  async connectMyAlgo(): Promise<WalletConnection> {
-    throw new Error('MyAlgo Wallet is no longer available. Please use Pera Wallet instead.');
-  }
-
   disconnectPera(): void {
     this.peraWallet.disconnect();
   }
 
-  isMyAlgoAvailable(): boolean {
-    return false; // MyAlgo is no longer available
-  }
-
   isPeraAvailable(): boolean {
     return typeof window !== 'undefined' && !!window?.pera;
-  }
-
-  getMyAlgoInstance(): any {
-    throw new Error('MyAlgo Wallet is no longer available');
   }
 
   getPeraInstance(): PeraWalletConnect {
@@ -83,7 +71,7 @@ export const signAndSendTip = async ({
   sender,
   recipient,
   amountAlgo,
-  devFeeAddress = 'YOUR_REAL_QUICKKASH_DEV_WALLET_ADDRESS_HERE', // <-- Replace with your real dev wallet address
+  devFeeAddress = 'YOUR_REAL_QUICKKASH_DEV_WALLET_ADDRESS_HERE',
   algodClient,
 }: {
   sender: string;
@@ -141,8 +129,7 @@ export const signAndSendTipWithWallet = async ({
   sender,
   recipient,
   amountAlgo,
-  devFeeAddress = 'YOUR_REAL_QUICKKASH_DEV_WALLET_ADDRESS_HERE', // <-- Replace with your real dev wallet address
-  walletType = 'pera',
+  devFeeAddress = 'YOUR_REAL_QUICKKASH_DEV_WALLET_ADDRESS_HERE',
   algodClient,
   note,
 }: {
@@ -150,15 +137,10 @@ export const signAndSendTipWithWallet = async ({
   recipient: string;
   amountAlgo: number;
   devFeeAddress?: string;
-  walletType?: 'pera' | 'myalgo';
   algodClient?: algosdk.Algodv2;
   note?: string;
 }) => {
   const client = algodClient || walletManager.getAlgodClient();
-
-  if (walletType === 'myalgo') {
-    throw new Error('MyAlgo Wallet is no longer available. Please use Pera Wallet instead.');
-  }
 
   try {
     const params = await client.getTransactionParams().do();

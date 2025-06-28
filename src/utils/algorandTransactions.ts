@@ -25,21 +25,17 @@ class AlgorandTransactionManager {
     fromAddress: string,
     toAddress: string,
     amount: number,
-    walletProvider: string,
     note?: string
   ): Promise<TransactionResult> {
     try {
       // Use the new grouped transaction approach with dev fee
       const devFeeAddress = import.meta.env.VITE_DEV_FEE_ADDRESS || 'QUICKKASH_DEV_WALLET_ADDRESS_HERE';
 
-      const walletType = walletProvider.toLowerCase() === 'pera wallet' ? 'pera' : 'myalgo';
-
       const txId = await signAndSendTipWithWallet({
         sender: fromAddress,
         recipient: toAddress,
         amountAlgo: amount,
         devFeeAddress,
-        walletType,
         algodClient: this.algodClient,
         note
       });
@@ -63,11 +59,6 @@ class AlgorandTransactionManager {
             success: false,
             error: 'Insufficient ALGO balance for this transaction'
           };
-        } else if (msg.includes('myalgo')) {
-          return {
-            success: false,
-            error: 'MyAlgo Wallet connection issue. Please try using Pera Wallet instead.'
-          };
         }
       }
 
@@ -78,14 +69,9 @@ class AlgorandTransactionManager {
     }
   }
 
-  async connectWallet(walletType: 'pera' | 'myalgo'): Promise<string> {
-    if (walletType === 'pera') {
-      const connection = await walletManager.connectPera();
-      return connection.address;
-    } else {
-      const connection = await walletManager.connectMyAlgo();
-      return connection.address;
-    }
+  async connectWallet(): Promise<string> {
+    const connection = await walletManager.connectPera();
+    return connection.address;
   }
 
   // Legacy method for backward compatibility (optional to keep)
@@ -106,4 +92,3 @@ class AlgorandTransactionManager {
 }
 
 export const transactionManager = new AlgorandTransactionManager();
-

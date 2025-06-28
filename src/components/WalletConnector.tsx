@@ -13,7 +13,7 @@ export const WalletConnector: React.FC<WalletConnectorProps> = ({ onWalletConnec
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleWalletConnect = async (walletType: 'pera') => {
+  const handleWalletConnect = async () => {
     setIsConnecting(true);
     setError(null);
 
@@ -30,17 +30,6 @@ export const WalletConnector: React.FC<WalletConnectorProps> = ({ onWalletConnec
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/20 via-slate-900 to-slate-900"></div>
-      
-      {/* Bolt Badge - Fixed position, non-clickable */}
-      <div className="absolute top-4 right-4 z-50">
-        <div className="w-16 h-16">
-          <img
-            src="/white_circle_360x360.png"
-            alt="Powered by Bolt.new"
-            className="w-full h-full object-contain"
-          />
-        </div>
-      </div>
       
       <div className="relative z-10">
         {/* Hero Section */}
@@ -147,7 +136,7 @@ export const WalletConnector: React.FC<WalletConnectorProps> = ({ onWalletConnec
 
               <div className="space-y-4">
                 <button
-                  onClick={() => handleWalletConnect('pera')}
+                  onClick={handleWalletConnect}
                   disabled={isConnecting}
                   className="w-full flex items-center justify-center space-x-3 p-4 btn-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none group"
                 >
@@ -157,16 +146,6 @@ export const WalletConnector: React.FC<WalletConnectorProps> = ({ onWalletConnec
                   </span>
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </button>
-
-                <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl text-yellow-300 text-sm backdrop-blur-sm">
-                  <div className="flex items-start space-x-2">
-                    <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="font-medium mb-1">MyAlgo Wallet Discontinued</p>
-                      <p>MyAlgo Wallet is no longer available. Please use Pera Wallet for the best experience.</p>
-                    </div>
-                  </div>
-                </div>
               </div>
 
               <div className="mt-6 pt-6 border-t border-slate-700">

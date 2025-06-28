@@ -32,8 +32,7 @@ class GroupTransactionBuilder {
    * Builds and signs a group transaction that splits a tip between creator (98%) and platform (2%)
    */
   async buildTipSplitTransaction(
-    params: TipSplitParams,
-    walletProvider: 'pera' | 'myalgo'
+    params: TipSplitParams
   ): Promise<GroupTransactionResult> {
     try {
       const { tipAmount, senderWallet, creatorWallet, platformWallet } = params;
@@ -78,8 +77,8 @@ class GroupTransactionBuilder {
         txn.group = groupId;
       });
 
-      // Sign the transactions based on wallet provider
-      const signedTxns = await this.signTransactionGroup(txnGroup, senderWallet, walletProvider);
+      // Sign the transactions using Pera Wallet
+      const signedTxns = await this.signTransactionGroup(txnGroup, senderWallet);
 
       return {
         success: true,
@@ -95,37 +94,23 @@ class GroupTransactionBuilder {
   }
 
   /**
-   * Signs a transaction group using the specified wallet provider
+   * Signs a transaction group using Pera Wallet
    */
   private async signTransactionGroup(
     txnGroup: algosdk.Transaction[],
-    senderAddress: string,
-    walletProvider: 'pera' | 'myalgo'
+    senderAddress: string
   ): Promise<Uint8Array[]> {
-    if (walletProvider === 'pera') {
-      const { PeraWalletConnect } = await import('@perawallet/connect');
-      const peraWallet = new PeraWalletConnect({ shouldShowSignTxnToast: false });
+    const peraWallet = walletManager.getPeraInstance();
 
-      // Prepare transactions for Pera Wallet
-      const txnArray = txnGroup.map(txn => ({
-        txn: txn.toByte(),
-        signers: [senderAddress],
-      }));
+    // Prepare transactions for Pera Wallet
+    const txnArray = txnGroup.map(txn => ({
+      txn: txn.toByte(),
+      signers: [senderAddress],
+    }));
 
-      const signedTxnArray = await peraWallet.signTransaction(txnArray);
-      // peraWallet.signTransaction returns array of { id, blob } objects
-      return signedTxnArray.map(txn => txn.blob);
-    } else if (walletProvider === 'myalgo') {
-      const myAlgoWallet = walletManager.getMyAlgoInstance();
-
-      // Convert transactions to bytes for MyAlgo
-      const txnBytes = txnGroup.map(txn => txn.toByte());
-      const signedTxnArray = await myAlgoWallet.signTransaction(txnBytes);
-
-      return signedTxnArray.map((signed: any) => signed.blob);
-    } else {
-      throw new Error('Unsupported wallet provider');
-    }
+    const signedTxnArray = await peraWallet.signTransaction(txnArray);
+    // peraWallet.signTransaction returns array of { id, blob } objects
+    return signedTxnArray.map(txn => txn.blob);
   }
 
   /**
@@ -204,19 +189,15 @@ export async function sendTipWithPlatformFee(
   tipAmount: number,
   senderWallet: string,
   creatorWallet: string,
-  platformWallet: string,
-  walletProvider: 'pera' | 'myalgo'
+  platformWallet: string
 ): Promise<{ success: boolean; txIds?: string[]; error?: string }> {
   // Build and sign the group transaction
-  const groupResult = await groupTransactionBuilder.buildTipSplitTransaction(
-    {
-      tipAmount,
-      senderWallet,
-      creatorWallet,
-      platformWallet,
-    },
-    walletProvider
-  );
+  const groupResult = await groupTransactionBuilder.buildTipSplitTransaction({
+    tipAmount,
+    senderWallet,
+    creatorWallet,
+    platformWallet,
+  });
 
   if (!groupResult.success || !groupResult.signedTxns) {
     return {

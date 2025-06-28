@@ -19,7 +19,6 @@ export const TipJarViewer: React.FC = () => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [tipperAddress, setTipperAddress] = useState<string | null>(null);
-  const [walletProvider, setWalletProvider] = useState<string>('');
   const [transactionResult, setTransactionResult] = useState<{ success: boolean; txId?: string; error?: string } | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [showPremiumContent, setShowPremiumContent] = useState(false);
@@ -79,28 +78,15 @@ export const TipJarViewer: React.FC = () => {
     }
   };
 
-  const handleWalletConnect = async (walletType: 'pera' | 'myalgo') => {
+  const handleWalletConnect = async () => {
     setIsConnecting(true);
     setError(null);
 
     try {
-      let address: string | null = null;
-      
-      if (walletType === 'pera') {
-        address = await connectPera();
-        setWalletProvider('Pera Wallet');
-      } else {
-        // For MyAlgo, we'll use the existing wallet manager
-        const { walletManager } = await import('../utils/walletConnection');
-        const connection = await walletManager.connectMyAlgo();
-        address = connection.address;
-        setWalletProvider('MyAlgo Wallet');
-      }
-
+      const address = await connectPera();
       if (!address) {
         throw new Error('No wallet address received');
       }
-
       setTipperAddress(address);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to connect wallet');
@@ -124,14 +110,12 @@ export const TipJarViewer: React.FC = () => {
 
     try {
       const devFeeAddress = import.meta.env.VITE_DEV_FEE_ADDRESS || 'QUICKKASH_DEV_WALLET_ADDRESS_HERE';
-      const walletType = walletProvider === 'Pera Wallet' ? 'pera' : 'myalgo';
 
       const txId = await signAndSendTipWithWallet({
         sender: tipperAddress,
         recipient: walletAddress,
         amountAlgo: finalAmount,
         devFeeAddress,
-        walletType,
         algodClient,
         note: tipNote
       });
@@ -497,21 +481,12 @@ export const TipJarViewer: React.FC = () => {
             {!tipperAddress ? (
               <div className="space-y-3">
                 <button
-                  onClick={() => handleWalletConnect('pera')}
+                  onClick={handleWalletConnect}
                   disabled={isConnecting}
                   className="w-full flex items-center justify-center space-x-2 py-4 btn-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
                   <Wallet className="w-5 h-5" />
                   <span>{isConnecting ? 'Connecting...' : 'Connect Pera Wallet'}</span>
-                </button>
-                
-                <button
-                  onClick={() => handleWalletConnect('myalgo')}
-                  disabled={isConnecting}
-                  className="w-full flex items-center justify-center space-x-2 py-4 btn-secondary disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                >
-                  <Wallet className="w-5 h-5" />
-                  <span>{isConnecting ? 'Connecting...' : 'Connect MyAlgo Wallet'}</span>
                 </button>
               </div>
             ) : (
