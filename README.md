@@ -4,6 +4,8 @@
 
 **QuickKash** is a decentralized application that enables creators to receive ALGO tips directly to their wallets while rewarding supporters with premium content. Built on the Algorand blockchain with a focus on privacy, security, and creator ownership.
 
+🌐 **Live Application**: [https://quickkash.me](https://quickkash.me)
+
 ## 🌟 Features
 
 ### Core Features
@@ -13,6 +15,7 @@
 - **📱 Wallet Integration**: Support for Pera Wallet and MyAlgo
 - **🔒 Privacy First**: No logins, no tracking, no personal data collection
 - **📊 Real-time Analytics**: Track tips, supporters, and engagement
+- **🔗 Custom Shortlinks**: Create memorable URLs like quickkash.me/@yourname
 
 ### Pro Features
 - **🎨 Custom Branding**: Personalized colors, fonts, and logos
@@ -113,12 +116,15 @@ src/
 │   ├── CreatorProfile.tsx       # Public creator profiles
 │   ├── TipButton.tsx           # Tip functionality
 │   ├── ProBrandingCustomizer.tsx # Pro branding features
-│   └── PremiumContentManager.tsx # Content management
+│   ├── PremiumContentManager.tsx # Content management
+│   ├── ShortlinkManager.tsx    # Custom shortlinks
+│   └── Navigation.tsx          # App navigation
 ├── utils/               # Utility functions
 │   ├── walletConnection.ts      # Wallet integration
 │   ├── algorandTransactions.ts  # Blockchain transactions
 │   ├── supabase.ts             # Database operations
-│   └── checkProStatus.ts       # Pro feature access
+│   ├── checkProStatus.ts       # Pro feature access
+│   └── shortlinks.ts           # Shortlink management
 └── pages/               # Route components
 ```
 
@@ -135,6 +141,11 @@ src/
 - Transaction records
 - Tip amounts and timestamps
 - Premium access tracking
+
+#### `shortlinks`
+- Custom shortlinks for creators
+- Click tracking and analytics
+- Active/inactive status
 
 #### `premium_content`
 - Exclusive content for supporters
@@ -179,12 +190,13 @@ src/
 1. **Connect Wallet**: Use Pera or MyAlgo wallet
 2. **Create Profile**: Set up name, bio, and avatar
 3. **Add Premium Content**: Upload exclusive content for supporters
-4. **Customize Branding** (Pro): Personalize colors and fonts
-5. **Share Your Link**: Promote your tip jar URL
+4. **Create Shortlinks**: Set up memorable URLs like quickkash.me/@yourname
+5. **Customize Branding** (Pro): Personalize colors and fonts
+6. **Share Your Link**: Promote your tip jar URL
 
 ### For Supporters
 
-1. **Visit Creator Profile**: Navigate to `/creator/{wallet_address}`
+1. **Visit Creator Profile**: Navigate to `/creator/{wallet_address}` or use shortlinks
 2. **Connect Wallet**: Connect your Algorand wallet
 3. **Send Tip**: Choose amount and send ALGO tip
 4. **Unlock Content**: Tips ≥ 10 ALGO unlock premium content
@@ -193,6 +205,7 @@ src/
 
 - `/` - Homepage and wallet connection
 - `/creator/{wallet}` - Public creator profile
+- `/@{slug}` - Custom shortlink redirect
 - `/dashboard` - Creator management (requires wallet)
 - `/demo` - TipButton component demo
 
@@ -214,6 +227,9 @@ src/
 - **Error handling**: Graceful failure recovery
 
 ## 🚀 Deployment
+
+### Live Application
+The application is deployed and available at: **[https://quickkash.me](https://quickkash.me)**
 
 ### Build for Production
 
@@ -248,7 +264,7 @@ npm run test
 ### Test Components
 ```bash
 # Visit the demo page
-http://localhost:5173/demo
+https://quickkash.me/demo
 ```
 
 ## 🤝 Contributing
@@ -278,11 +294,13 @@ http://localhost:5173/demo
 
 ## 📈 Roadmap
 
-### Phase 1 (Current)
+### Phase 1 (Current) ✅
 - ✅ Basic tip jar functionality
 - ✅ Premium content system
 - ✅ Pro branding features
 - ✅ Creator dashboard
+- ✅ Custom shortlinks
+- ✅ Production deployment
 
 ### Phase 2 (Next)
 - 🔄 Mobile app (React Native)
@@ -320,9 +338,15 @@ http://localhost:5173/demo
 - Verify wallet address is correct
 - Check subscription status in dashboard
 
+**Shortlinks Not Working**
+- Ensure shortlink is active
+- Check for typos in the URL
+- Verify creator profile exists
+
 ### Getting Help
 
-- 📧 Email: support@quickkash.app
+- 🌐 Website: [https://quickkash.me](https://quickkash.me)
+- 📧 Email: support@quickkash.me
 - 💬 Discord: [QuickKash Community](https://discord.gg/quickkash)
 - 🐛 Issues: [GitHub Issues](https://github.com/your-username/quickkash-tip-jar/issues)
 
@@ -336,6 +360,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Supabase** for the excellent backend-as-a-service
 - **Pera Wallet** and **MyAlgo** for wallet integration
 - **Nodely** for reliable Algorand API access
+- **Netlify** for seamless deployment and hosting
 - **The Creator Economy** for inspiring this project
 
 ## 📊 Stats
@@ -350,3 +375,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Built with ❤️ for the creator economy on Algorand**
 
 *QuickKash - Empowering creators with decentralized monetization*
+
+**🌐 Visit us at [quickkash.me](https://quickkash.me)**
