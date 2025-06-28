@@ -56,18 +56,18 @@ export const WalletConnector: React.FC<WalletConnectorProps> = ({ onWalletConnec
         <div className="flex items-center justify-center min-h-screen p-4">
           <div className="max-w-4xl w-full">
             <div className="text-center mb-12">
-              {/* Enhanced QuickKash Header */}
-              <div className="mb-16">
-                <div className="flex justify-center mb-8">
+              {/* Enhanced QuickKash Header - Lowered positioning */}
+              <div className="mb-12">
+                <div className="flex justify-center mb-6">
                   <div className="relative transform hover:scale-105 transition-transform duration-300">
                     <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/20 to-teal-400/20 rounded-3xl blur-xl"></div>
-                    <div className="relative bg-gradient-to-r from-slate-800/80 to-slate-700/80 backdrop-blur-xl rounded-3xl p-8 border border-emerald-500/30 shadow-2xl">
+                    <div className="relative bg-gradient-to-r from-slate-800/80 to-slate-700/80 backdrop-blur-xl rounded-3xl p-6 border border-emerald-500/30 shadow-2xl">
                       <QuickKashLogo size="large" />
-                      <div className="absolute -top-3 -right-3">
-                        <Sparkles className="w-10 h-10 text-emerald-400 animate-pulse" />
+                      <div className="absolute -top-2 -right-2">
+                        <Sparkles className="w-8 h-8 text-emerald-400 animate-pulse" />
                       </div>
-                      <div className="absolute -bottom-2 -left-2">
-                        <div className="w-6 h-6 bg-gradient-to-r from-emerald-400 to-teal-400 rounded-full animate-pulse"></div>
+                      <div className="absolute -bottom-1 -left-1">
+                        <div className="w-5 h-5 bg-gradient-to-r from-emerald-400 to-teal-400 rounded-full animate-pulse"></div>
                       </div>
                     </div>
                   </div>
@@ -76,7 +76,7 @@ export const WalletConnector: React.FC<WalletConnectorProps> = ({ onWalletConnec
                 {/* Subtitle with enhanced styling */}
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/10 to-teal-400/10 rounded-2xl blur-lg"></div>
-                  <div className="relative bg-slate-800/40 backdrop-blur-sm rounded-2xl p-6 border border-emerald-500/20">
+                  <div className="relative bg-slate-800/40 backdrop-blur-sm rounded-2xl p-4 border border-emerald-500/20">
                     <p className="text-lg text-emerald-300 font-semibold tracking-wide">
                       The Future of Creator Monetization
                     </p>
