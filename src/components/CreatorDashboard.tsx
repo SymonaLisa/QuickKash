@@ -21,7 +21,8 @@ import {
   BarChart3,
   LogOut,
   Shield,
-  Link
+  Link,
+  Zap
 } from 'lucide-react';
 import { connectPera, disconnectPera } from '../utils/walletConnection';
 import { supabaseManager } from '../utils/supabase';
@@ -31,6 +32,7 @@ import { PremiumContentManager } from './PremiumContentManager';
 import { ProBrandingCustomizer } from './ProBrandingCustomizer';
 import { ShortlinkManager } from './ShortlinkManager';
 import { QuickKashLogo } from './QuickKashLogo';
+import { isSuperUser, shouldEnableSuperUserFeatures } from '../utils/devSuperUser';
 
 interface CreatorProfile {
   id: string;
@@ -61,6 +63,10 @@ export const CreatorDashboard: React.FC = () => {
   const [tipStats, setTipStats] = useState({ total: 0, count: 0, premiumCount: 0 });
   const [copied, setCopied] = useState(false);
   const [connectionAttempted, setConnectionAttempted] = useState(false);
+  const [isSuperUserMode, setIsSuperUserMode] = useState(false);
+  const [superUserWallet, setSuperUserWallet] = useState('');
+
+  const superUserFeaturesEnabled = shouldEnableSuperUserFeatures();
 
   useEffect(() => {
     initializeDashboard();
@@ -72,20 +78,48 @@ export const CreatorDashboard: React.FC = () => {
     setConnectionAttempted(true);
 
     try {
-      // Connect wallet with route protection
+      // First try to connect wallet normally
       const address = await connectPera();
-      if (!address) {
-        // 🚫 Redirect to homepage if no wallet connected
-        navigate('/');
+      if (address) {
+        setWalletAddress(address);
+        await loadProfile(address);
+        setLoading(false);
         return;
       }
-
-      setWalletAddress(address);
-      await loadProfile(address);
     } catch (err) {
-      console.error('Dashboard initialization failed:', err);
-      // 🚫 Redirect to homepage on connection failure
-      navigate('/');
+      console.log('Normal wallet connection failed, checking for super user mode...');
+    }
+
+    // If normal connection fails and super user features are enabled, show super user option
+    if (superUserFeaturesEnabled) {
+      setLoading(false);
+      // Don't redirect, show super user option instead
+      return;
+    }
+
+    // If no super user features, redirect to homepage
+    navigate('/');
+  };
+
+  const handleSuperUserAccess = async () => {
+    if (!superUserWallet.trim()) {
+      setError('Please enter a wallet address for super user access');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Add to super user list if not already there
+      const { devUtils } = await import('../utils/devSuperUser');
+      devUtils.addSuperUser(superUserWallet.trim());
+      
+      setWalletAddress(superUserWallet.trim());
+      setIsSuperUserMode(true);
+      await loadProfile(superUserWallet.trim());
+    } catch (err) {
+      setError('Failed to enable super user access');
     } finally {
       setLoading(false);
     }
@@ -105,6 +139,17 @@ export const CreatorDashboard: React.FC = () => {
         setTipStats(stats);
       } else {
         setIsProfileLive(false);
+        // For super users, create a default profile if none exists
+        if (isSuperUser(address)) {
+          setProfile({
+            id: address,
+            name: 'Super User Demo',
+            email: `${address.slice(0, 8)}@demo.com`,
+            bio: 'Demo profile with full Pro access for testing purposes',
+            is_pro: true,
+            created_at: new Date().toISOString()
+          });
+        }
       }
     } catch (err) {
       console.error('Failed to load profile:', err);
@@ -153,9 +198,13 @@ export const CreatorDashboard: React.FC = () => {
 
   const handleDisconnectWallet = async () => {
     try {
-      await disconnectPera();
+      if (!isSuperUserMode) {
+        await disconnectPera();
+      }
       setWalletAddress(null);
       setProfile(null);
+      setIsSuperUserMode(false);
+      setSuperUserWallet('');
       navigate('/');
     } catch (error) {
       console.error('Failed to disconnect wallet:', error);
@@ -212,17 +261,62 @@ export const CreatorDashboard: React.FC = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
         <div className="max-w-md w-full glass-card p-8 text-center">
           <Shield className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-primary mb-2">Wallet Required</h1>
+          <h1 className="text-2xl font-bold text-primary mb-2">Dashboard Access</h1>
           <p className="text-secondary mb-6">
-            Please connect your Pera Wallet to access the creator dashboard.
+            Connect your Pera Wallet or use Super User access to view the creator dashboard.
           </p>
-          <div className="space-y-3">
+          
+          <div className="space-y-4">
             <button
               onClick={initializeDashboard}
               className="w-full btn-primary py-3"
             >
               Connect Pera Wallet
             </button>
+
+            {superUserFeaturesEnabled && (
+              <>
+                <div className="flex items-center space-x-2">
+                  <div className="flex-1 h-px bg-slate-600"></div>
+                  <span className="text-xs text-muted">OR</span>
+                  <div className="flex-1 h-px bg-slate-600"></div>
+                </div>
+
+                <div className="bg-gradient-to-r from-red-500/10 to-orange-500/10 border border-red-500/20 rounded-xl p-4 backdrop-blur-sm">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <Zap className="w-5 h-5 text-red-400" />
+                    <span className="font-semibold text-red-300">Super User Access</span>
+                  </div>
+                  <p className="text-red-200 text-sm mb-3">
+                    For demo purposes - bypass wallet connection with any address
+                  </p>
+                  
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      value={superUserWallet}
+                      onChange={(e) => setSuperUserWallet(e.target.value)}
+                      placeholder="Enter any wallet address..."
+                      className="input-field text-sm"
+                      onKeyPress={(e) => e.key === 'Enter' && handleSuperUserAccess()}
+                    />
+                    <button
+                      onClick={handleSuperUserAccess}
+                      disabled={loading || !superUserWallet.trim()}
+                      className="w-full flex items-center justify-center space-x-2 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Shield className="w-4 h-4" />
+                      )}
+                      <span>{loading ? 'Enabling...' : 'Enable Super User'}</span>
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+
             <button
               onClick={() => navigate('/')}
               className="w-full btn-secondary py-3"
@@ -230,6 +324,12 @@ export const CreatorDashboard: React.FC = () => {
               Go Home
             </button>
           </div>
+
+          {error && (
+            <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-300 text-sm">
+              {error}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -251,6 +351,12 @@ export const CreatorDashboard: React.FC = () => {
                 <div className="flex items-center space-x-2 mb-1">
                   <QuickKashLogo size="small" showIcon={false} />
                   <span className="text-slate-400">Dashboard</span>
+                  {isSuperUserMode && (
+                    <div className="flex items-center space-x-1 px-2 py-1 bg-red-500/20 text-red-300 rounded-full text-xs font-medium border border-red-500/30">
+                      <Zap className="w-3 h-3" />
+                      <span>Super User</span>
+                    </div>
+                  )}
                 </div>
                 <h1 className="text-2xl font-bold text-primary">
                   {profile?.name || 'Creator Dashboard'}
@@ -273,7 +379,7 @@ export const CreatorDashboard: React.FC = () => {
               </div>
 
               {/* Pro Badge */}
-              {profile?.is_pro && (
+              {(profile?.is_pro || isSuperUser(walletAddress || '')) && (
                 <div className="flex items-center space-x-1 px-3 py-1 bg-gradient-to-r from-purple-500/10 to-pink-500/10 text-purple-300 rounded-full text-sm font-medium border border-purple-500/20">
                   <Crown className="w-4 h-4" />
                   <span>Pro</span>
@@ -284,10 +390,10 @@ export const CreatorDashboard: React.FC = () => {
               <button
                 onClick={handleDisconnectWallet}
                 className="flex items-center space-x-2 px-3 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-300 rounded-lg transition-colors text-sm"
-                title="Disconnect Wallet"
+                title={isSuperUserMode ? "Exit Super User Mode" : "Disconnect Wallet"}
               >
                 <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Disconnect</span>
+                <span className="hidden sm:inline">{isSuperUserMode ? 'Exit' : 'Disconnect'}</span>
               </button>
             </div>
           </div>
